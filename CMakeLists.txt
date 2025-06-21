@@ -33,6 +33,10 @@ file(GLOB SRC_FILES
     src/main.cpp
     src/Core/Platform.cpp
     src/Core/Render.cpp
+    src/Core/Mesh.cpp
+    src/Core/CubeMesh.cpp
+    src/Math/MathTool.cpp
+    
     ${CMAKE_SOURCE_DIR}/external/glad/src/glad.c
 )
 

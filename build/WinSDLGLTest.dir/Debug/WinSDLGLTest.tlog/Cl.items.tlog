@@ -1,4 +1,7 @@
-E:\Course_USTC\QRS_Render\external\glad\src\glad.c;E:\Course_USTC\QRS_Render\build\WinSDLGLTest.dir\Debug\glad.obj
-E:\Course_USTC\QRS_Render\src\Core\Platform.cpp;E:\Course_USTC\QRS_Render\build\WinSDLGLTest.dir\Debug\Platform.obj
-E:\Course_USTC\QRS_Render\src\Core\Render.cpp;E:\Course_USTC\QRS_Render\build\WinSDLGLTest.dir\Debug\Render.obj
-E:\Course_USTC\QRS_Render\src\main.cpp;E:\Course_USTC\QRS_Render\build\WinSDLGLTest.dir\Debug\main.obj
+E:\SchoolWork\Pi_Renderer\external\glad\src\glad.c;E:\SchoolWork\Pi_Renderer\build\WinSDLGLTest.dir\Debug\glad.obj
+E:\SchoolWork\Pi_Renderer\src\Core\CubeMesh.cpp;E:\SchoolWork\Pi_Renderer\build\WinSDLGLTest.dir\Debug\CubeMesh.obj
+E:\SchoolWork\Pi_Renderer\src\Core\Mesh.cpp;E:\SchoolWork\Pi_Renderer\build\WinSDLGLTest.dir\Debug\Mesh.obj
+E:\SchoolWork\Pi_Renderer\src\Core\Platform.cpp;E:\SchoolWork\Pi_Renderer\build\WinSDLGLTest.dir\Debug\Platform.obj
+E:\SchoolWork\Pi_Renderer\src\Core\Render.cpp;E:\SchoolWork\Pi_Renderer\build\WinSDLGLTest.dir\Debug\Render.obj
+E:\SchoolWork\Pi_Renderer\src\Math\MathTool.cpp;E:\SchoolWork\Pi_Renderer\build\WinSDLGLTest.dir\Debug\MathTool.obj
+E:\SchoolWork\Pi_Renderer\src\main.cpp;E:\SchoolWork\Pi_Renderer\build\WinSDLGLTest.dir\Debug\main.obj
