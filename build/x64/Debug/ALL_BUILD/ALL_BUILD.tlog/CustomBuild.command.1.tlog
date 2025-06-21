@@ -1,0 +1,10 @@
+^E:\COURSE_USTC\QRS_RENDER\CMAKELISTS.TXT
+setlocal
+"E:\Program Files\CMake\bin\cmake.exe" -SE:/Course_USTC/QRS_Render -BE:/Course_USTC/QRS_Render/build --check-stamp-file E:/Course_USTC/QRS_Render/build/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
