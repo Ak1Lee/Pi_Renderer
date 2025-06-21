@@ -7,6 +7,7 @@
 #endif
 #include <memory>
 #include "Mesh.h"
+#include "CubeMesh.h" // Include CubeMesh class for cube rendering
 
 namespace Core {
 
@@ -18,6 +19,8 @@ public:
     void resize(int width, int height);
     // 渲染，参数为 4x4 MVP 矩阵
     void render(const float mvp[16], const float model[16]);
+    
+    void render(const float vp[16], const std::vector<float*>& modelMatrices);
     // 清理资源
     void shutdown();
 private:
@@ -27,6 +30,8 @@ private:
     unsigned int ebo;
     int indexCount;
     bool compileShaders();
+
+    CubeMesh Cube; // 使用 CubeMesh 类来处理立方体网格
 };
 
 } // namespace Core

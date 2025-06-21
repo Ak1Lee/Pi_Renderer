@@ -481,6 +481,9 @@
 #include <cmath>
 #include <vector>
 #include <string>
+#include <iostream>
+#define SDL_MAIN_HANDLED
+#include <SDL.h>
 
 
 int main() {
@@ -494,30 +497,59 @@ int main() {
 
     bool running = true;
     float aspect = 800.0f / 600.0f;
-    float proj[16], view[16], model[16], tmp[16], mvp[16];
+    float proj[16], view[16], model[16], tmp[16], mvp[16],vp[16];
+
+    const float targetFrameTime = 1000.0f / 60.0f; // 60帧
+    Uint32 lastTicks = SDL_GetTicks();
+    float totalTime = 0.0f;
+
     while (running) {
+        Uint32 frameStart = SDL_GetTicks();
+
         pollEvents(running);
 
-        static float t = 0.0f;
-        t += 0.01f;
-        // 模型矩阵：旋转
-        createModelMatrix(model, t * 50.f, t * 10.f);
-        // 投影矩阵：透视
+        float deltaTime = targetFrameTime / 1000.0f; // 固定步进
+        totalTime += deltaTime;
+
+        // 1秒转半圈
+        float angle = fmod(totalTime * 180.0f, 360.0f);
+
+        createModelMatrix(model, angle, angle);
+        float pos[3] = {1, 0, 0};
+        float rot[3] = {angle, angle, 0};
+        float scale[3] = {1, 1, 1};
+        createModelMatrix1(model, pos, rot, scale);
         createPerspectiveMatrix(M_PI / 4.0f, aspect, 0.1f, 100.0f, proj);
-        // 视图矩阵：摄像机
         float eye[3] = {0.0f, 0.0f, 5.0f};
         float center[3] = {0.0f, 0.0f, 0.0f};
         float up[3] = {0.0f, 1.0f, 0.0f};
         createLookAtMatrix(eye, center, up, view);
 
-        // MVP = proj * view * model
         multiplyMatrices(view, model, tmp);
         multiplyMatrices(proj, tmp, mvp);
 
-        // 渲染
+        multiplyMatrices(proj, view, vp);
+        std::vector<float*> models;
+        models.push_back(model);
+        float pos1[3] = {-1, 0, 0};
+        float model1[16];
+        createModelMatrix1(model1, pos1, rot, scale);
+        models.push_back(model1);
+
+
+
+
         renderer.resize(800, 600);
-        renderer.render(mvp, model);
+        //renderer.render(mvp, model);
+        renderer.render(vp, models);
         swapBuffers();
+
+        // 固定帧率
+        Uint32 frameEnd = SDL_GetTicks();
+        Uint32 frameTime = frameEnd - frameStart;
+        if (frameTime < targetFrameTime) {
+            SDL_Delay((Uint32)(targetFrameTime - frameTime));
+        }
     }
 
     renderer.shutdown();

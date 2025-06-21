@@ -140,3 +140,47 @@ void createModelMatrix(float matrix[16], float rotate_y_deg, float rotate_x_deg)
         matrix[i] = temp_rot[i];
     }
 }
+void createModelMatrix1(float matrix[16], float offset[3],float rotate_deg[3], float scale[3]) {
+
+    createIdentityMatrix(matrix);
+    float angle_rad_y = rotate_deg[1] * (M_PI / 180.0f);
+    float c_y = cos(angle_rad_y);
+    float s_y = sin(angle_rad_y);
+    
+    float rotY_mat[16]; 
+    createIdentityMatrix(rotY_mat);
+    rotY_mat[0] = c_y; 
+    rotY_mat[2] = s_y;
+    rotY_mat[8] = -s_y; 
+    rotY_mat[10] = c_y;
+
+    float angle_rad_x = rotate_deg[2] * (M_PI / 180.0f);
+    float c_x = cos(angle_rad_x);
+    float s_x = sin(angle_rad_x);
+    
+    float rotX_mat[16]; 
+    createIdentityMatrix(rotX_mat);
+    rotX_mat[5] = c_x; 
+    rotX_mat[6] = -s_x;
+    rotX_mat[9] = s_x; 
+    rotX_mat[10] = c_x;
+
+    float temp_rot[16];
+    multiplyMatrices(rotY_mat, rotX_mat, temp_rot);
+        // 复制结果到返回矩阵
+    for (int i = 0; i < 16; i++) {
+        matrix[i] = temp_rot[i];
+    }
+
+    // 平移
+    matrix[12] = offset[0];
+    matrix[13] = offset[1];
+    matrix[14] = offset[2];
+    // 缩放
+    matrix[0] *= scale[0];
+    matrix[5] *= scale[1];
+    matrix[10] *= scale[2];
+    // 旋转
+
+
+}

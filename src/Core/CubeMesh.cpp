@@ -47,11 +47,54 @@ CubeMesh::CubeMesh() {
         20,21,22,20,22,23   // Bottom
     };
     
-    // Call base class's setupData with the cube's specific vertex and index data.
-    // Each vertex has 6 floats (3 for position, 3 for normal).
-    setupData(std::vector<float>(verts, verts + sizeof(verts)/sizeof(verts[0])),
-              std::vector<unsigned short>(idxs, idxs + sizeof(idxs)/sizeof(idxs[0])),
-              6); // 6 floats per vertex
+    indexCount = sizeof(idxs) / sizeof(idxs[0]);
+#ifdef USE_DESKTOP_GL
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
+#endif
+
+    glGenBuffers(1, &vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(verts), verts, GL_STATIC_DRAW);
+
+    glGenBuffers(1, &ebo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(idxs), idxs, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0); // 位置
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float))); // 法线
+    glEnableVertexAttribArray(1);
+
+#ifdef USE_DESKTOP_GL
+    glBindVertexArray(0);
+#endif
+
+}
+
+CubeMesh::~CubeMesh() {
+#ifdef USE_DESKTOP_GL
+    if (vao) glDeleteVertexArrays(1, &vao);
+#endif
+    if (vbo) glDeleteBuffers(1, &vbo);
+    if (ebo) glDeleteBuffers(1, &ebo);
+}
+
+void CubeMesh::draw() {
+#ifdef USE_DESKTOP_GL
+    glBindVertexArray(vao);
+    glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_SHORT, 0);
+    glBindVertexArray(0);
+#else
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+    glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_SHORT, 0);
+#endif
 }
 
 } // namespace Core
+

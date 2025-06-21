@@ -70,57 +70,7 @@ bool Renderer::compileShaders() {
 
 bool Renderer::init() {
     if (!compileShaders()) return false;
-        // 立方体顶点与索引
-    // 定义立方体顶点和索引（与原 main.cpp 中 createCube 保持一致）
-    // 顶点数据：每个顶点6个float（x, y, z, nx, ny, nz）
-    const float verts[] = {
-    // 前面
-    -0.5f,-0.5f, 0.5f,  0,0,1,  0.5f,-0.5f, 0.5f,  0,0,1,  0.5f, 0.5f, 0.5f,  0,0,1,  -0.5f, 0.5f, 0.5f,  0,0,1,
-    // 后面
-    -0.5f,-0.5f,-0.5f,  0,0,-1,  0.5f,-0.5f,-0.5f,  0,0,-1,  0.5f, 0.5f,-0.5f,  0,0,-1,  -0.5f, 0.5f,-0.5f,  0,0,-1,
-    // 左面
-    -0.5f,-0.5f,-0.5f,  -1,0,0,  -0.5f,-0.5f, 0.5f,  -1,0,0,  -0.5f, 0.5f, 0.5f,  -1,0,0,  -0.5f, 0.5f,-0.5f,  -1,0,0,
-    // 右面
-     0.5f,-0.5f,-0.5f,  1,0,0,  0.5f,-0.5f, 0.5f,  1,0,0,  0.5f, 0.5f, 0.5f,  1,0,0,  0.5f, 0.5f,-0.5f,  1,0,0,
-    // 顶面
-    -0.5f, 0.5f,-0.5f,  0,1,0,  -0.5f, 0.5f, 0.5f,  0,1,0,  0.5f, 0.5f, 0.5f,  0,1,0,  0.5f, 0.5f,-0.5f,  0,1,0,
-    // 底面
-    -0.5f,-0.5f,-0.5f,  0,-1,0,  -0.5f,-0.5f, 0.5f,  0,-1,0,  0.5f,-0.5f, 0.5f,  0,-1,0,  0.5f,-0.5f,-0.5f,  0,-1,0
-    };
-    const unsigned short idxs[] = {
-        0,1,2, 0,2,3,       // 前面
-        4,5,6, 4,6,7,       // 后面
-        8,9,10,8,10,11,     // 左面
-        12,13,14,12,14,15,  // 右面
-        16,17,18,16,18,19,  // 顶面
-        20,21,22,20,22,23   // 底面
-    };
-    indexCount = sizeof(idxs)/sizeof(idxs[0]);
-    
-#ifdef USE_DESKTOP_GL
-    // 使用 VAO 在桌面环境绑定状态
-    glGenVertexArrays(1, &vao);
-    glBindVertexArray(vao);
-#endif
 
-    // 绑定并上传 VBO/EBO
-    glGenBuffers(1, &vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(verts), verts, GL_STATIC_DRAW);
-
-    glGenBuffers(1, &ebo);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(idxs), idxs, GL_STATIC_DRAW);
-
-    // 设置顶点属性指针（位置和法线）
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0); // 位置
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float))); // 法线
-    glEnableVertexAttribArray(1);
-
-#ifdef USE_DESKTOP_GL
-    glBindVertexArray(0); // 解绑 VAO，防止后续误操作
-#endif
     
     glEnable(GL_DEPTH_TEST);
     
@@ -139,21 +89,23 @@ void Renderer::render(const float mvp[16], const float model[16]) {
     glUniform4f(glGetUniformLocation(shaderProgram,"u_color"),1.f,1.f,1.f,1.0f);
     glUniform3f(glGetUniformLocation(shaderProgram, "u_lightDir"), 1.0f, 1.0f, 1.0f); // 你想要的光方向
 
-#ifdef USE_DESKTOP_GL
-    glBindVertexArray(vao);
-#else
-    // GLES2.0 需要每帧重新设置属性指针
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-#endif
-
-    glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_SHORT, 0);
+    Cube.draw(); // 使用 CubeMesh 类来绘制立方体
 }
 
+void Renderer::render(const float vp[16], const std::vector<float*>& modelMatrices) {
+    glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+    glUseProgram(shaderProgram);
+    glUniform4f(glGetUniformLocation(shaderProgram,"u_color"),1.f,1.f,1.f,1.0f);
+    glUniform3f(glGetUniformLocation(shaderProgram, "u_lightDir"), 1.0f, 1.0f, 1.0f);
+
+    float mvp[16];
+    for (auto model : modelMatrices) {
+        multiplyMatrices(vp, model, mvp); // mvp = vp * model
+        glUniformMatrix4fv(glGetUniformLocation(shaderProgram,"u_mvpMatrix"),1,GL_FALSE,mvp);
+        glUniformMatrix4fv(glGetUniformLocation(shaderProgram,"u_modelMatrix"),1,GL_FALSE,model);
+        Cube.draw();
+    }
+}
 void Renderer::shutdown() {
     glDeleteProgram(shaderProgram); // Delete shader program
 }
