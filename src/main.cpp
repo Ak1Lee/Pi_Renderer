@@ -487,10 +487,14 @@
 
 
 int main() {
+    std::cout << "Program started" << std::endl;
     using namespace Platform;
     int window_width = 800;
     int window_height = 600;
-    if (!initWindow(window_width, window_height)) return -1;
+    if (!initWindow(window_width, window_height)) {
+        std::cerr << "initWindow failed!" << std::endl;
+        return -1;
+    }
 
     Core::Renderer renderer;
     if (!renderer.init()) return -1;
@@ -502,6 +506,8 @@ int main() {
     const float targetFrameTime = 1000.0f / 60.0f; // 60帧
     Uint32 lastTicks = SDL_GetTicks();
     float totalTime = 0.0f;
+
+    std::cout << "Init :"<< std::endl;
 
     while (running) {
         Uint32 frameStart = SDL_GetTicks();
@@ -550,6 +556,7 @@ int main() {
         if (frameTime < targetFrameTime) {
             SDL_Delay((Uint32)(targetFrameTime - frameTime));
         }
+        std::cout << "Frame: " << totalTime << std::endl;
     }
 
     renderer.shutdown();
