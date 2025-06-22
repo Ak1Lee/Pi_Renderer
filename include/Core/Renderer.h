@@ -8,6 +8,7 @@
 #include <memory>
 #include "Mesh.h"
 #include "CubeMesh.h" // Include CubeMesh class for cube rendering
+#include "PanelMesh.h" // Include PanelMesh class for panel rendering
 
 namespace Core {
 
@@ -22,6 +23,8 @@ public:
     
     void render(const float vp[16], const std::vector<float*>& modelMatrices);
     // 清理资源
+    void renderPanel(const float vp[16],const float model[16]);
+
     void shutdown();
 private:
     unsigned int shaderProgram;
@@ -32,6 +35,8 @@ private:
     bool compileShaders();
 
     CubeMesh Cube; // 使用 CubeMesh 类来处理立方体网格
+    PanelMesh Panel; // 使用 PanelMesh 类来处理面板网格
+
 };
 
 } // namespace Core

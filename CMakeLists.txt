@@ -26,19 +26,32 @@ endif()
 #     )
 
 # glad loader
-include_directories(${CMAKE_SOURCE_DIR}/external/glad/include)
-
-# 源文件列表
-file(GLOB SRC_FILES
-    src/main.cpp
-    src/Core/Platform.cpp
-    src/Core/Render.cpp
-    src/Core/Mesh.cpp
-    src/Core/CubeMesh.cpp
-    src/Math/MathTool.cpp
-    
-    ${CMAKE_SOURCE_DIR}/external/glad/src/glad.c
-)
+if(WIN32)
+  # glad 只在桌面GL下用
+  include_directories(${CMAKE_SOURCE_DIR}/external/glad/include)
+  set(SRC_FILES
+      src/main.cpp
+      src/Core/Platform.cpp
+      src/Core/Render.cpp
+      src/Core/Mesh.cpp
+      src/Core/CubeMesh.cpp
+      src/Core/PanelMesh.cpp
+      src/Math/MathTool.cpp
+      
+      ${CMAKE_SOURCE_DIR}/external/glad/src/glad.c
+  )
+else()
+  # 树莓派/ARM下不用 glad
+  set(SRC_FILES
+      src/main.cpp
+      src/Core/Platform.cpp
+      src/Core/Render.cpp
+      src/Core/Mesh.cpp
+      src/Core/CubeMesh.cpp
+      src/Math/MathTool.cpp
+      src/Core/PanelMesh.cpp
+  )
+endif()
 
 # 可执行文件
 add_executable(${PROJECT_NAME} ${SRC_FILES})
@@ -49,9 +62,13 @@ target_link_libraries(${PROJECT_NAME}
 )
 
 if (WIN32)
-    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${CMAKE_SOURCE_DIR}/external/SDL2/lib/x64/SDL2.dll"
-        $<TARGET_FILE_DIR:${PROJECT_NAME}>
+    target_link_libraries(${PROJECT_NAME}
+        SDL2
+        opengl32
+    )
+else()
+    target_link_libraries(${PROJECT_NAME}
+        SDL2
+        GLESv2
     )
 endif()

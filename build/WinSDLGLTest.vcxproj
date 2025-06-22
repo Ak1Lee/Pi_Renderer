@@ -116,20 +116,8 @@
       <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
       <ProxyFileName>%(Filename)_p.c</ProxyFileName>
     </Midl>
-    <PostBuildEvent>
-      <Message></Message>
-      <Command>setlocal
-"E:\Program Files\CMake\bin\cmake.exe" -E copy_if_different E:/Course_USTC/QRS_Render/external/SDL2/lib/x64/SDL2.dll E:/Course_USTC/QRS_Render/build/Debug
-if %errorlevel% neq 0 goto :cmEnd
-:cmEnd
-endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
-:cmErrorLevel
-exit /b %1
-:cmDone
-if %errorlevel% neq 0 goto :VCEnd</Command>
-    </PostBuildEvent>
     <Link>
-      <AdditionalDependencies>SDL2.lib;opengl32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalDependencies>SDL2.lib;opengl32.lib;SDL2.lib;opengl32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>E:/Course_USTC/QRS_Render/external/SDL2/lib/x64;E:/Course_USTC/QRS_Render/external/SDL2/lib/x64/$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -175,20 +163,8 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
       <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
       <ProxyFileName>%(Filename)_p.c</ProxyFileName>
     </Midl>
-    <PostBuildEvent>
-      <Message></Message>
-      <Command>setlocal
-"E:\Program Files\CMake\bin\cmake.exe" -E copy_if_different E:/Course_USTC/QRS_Render/external/SDL2/lib/x64/SDL2.dll E:/Course_USTC/QRS_Render/build/Release
-if %errorlevel% neq 0 goto :cmEnd
-:cmEnd
-endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
-:cmErrorLevel
-exit /b %1
-:cmDone
-if %errorlevel% neq 0 goto :VCEnd</Command>
-    </PostBuildEvent>
     <Link>
-      <AdditionalDependencies>SDL2.lib;opengl32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalDependencies>SDL2.lib;opengl32.lib;SDL2.lib;opengl32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>E:/Course_USTC/QRS_Render/external/SDL2/lib/x64;E:/Course_USTC/QRS_Render/external/SDL2/lib/x64/$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
       <GenerateDebugInformation>false</GenerateDebugInformation>
@@ -234,20 +210,8 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
       <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
       <ProxyFileName>%(Filename)_p.c</ProxyFileName>
     </Midl>
-    <PostBuildEvent>
-      <Message></Message>
-      <Command>setlocal
-"E:\Program Files\CMake\bin\cmake.exe" -E copy_if_different E:/Course_USTC/QRS_Render/external/SDL2/lib/x64/SDL2.dll E:/Course_USTC/QRS_Render/build/MinSizeRel
-if %errorlevel% neq 0 goto :cmEnd
-:cmEnd
-endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
-:cmErrorLevel
-exit /b %1
-:cmDone
-if %errorlevel% neq 0 goto :VCEnd</Command>
-    </PostBuildEvent>
     <Link>
-      <AdditionalDependencies>SDL2.lib;opengl32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalDependencies>SDL2.lib;opengl32.lib;SDL2.lib;opengl32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>E:/Course_USTC/QRS_Render/external/SDL2/lib/x64;E:/Course_USTC/QRS_Render/external/SDL2/lib/x64/$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
       <GenerateDebugInformation>false</GenerateDebugInformation>
@@ -292,20 +256,8 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
       <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
       <ProxyFileName>%(Filename)_p.c</ProxyFileName>
     </Midl>
-    <PostBuildEvent>
-      <Message></Message>
-      <Command>setlocal
-"E:\Program Files\CMake\bin\cmake.exe" -E copy_if_different E:/Course_USTC/QRS_Render/external/SDL2/lib/x64/SDL2.dll E:/Course_USTC/QRS_Render/build/RelWithDebInfo
-if %errorlevel% neq 0 goto :cmEnd
-:cmEnd
-endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
-:cmErrorLevel
-exit /b %1
-:cmDone
-if %errorlevel% neq 0 goto :VCEnd</Command>
-    </PostBuildEvent>
     <Link>
-      <AdditionalDependencies>SDL2.lib;opengl32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalDependencies>SDL2.lib;opengl32.lib;SDL2.lib;opengl32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>E:/Course_USTC/QRS_Render/external/SDL2/lib/x64;E:/Course_USTC/QRS_Render/external/SDL2/lib/x64/$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -376,13 +328,14 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="E:\Course_USTC\QRS_Render\external\glad\src\glad.c" />
-    <ClCompile Include="E:\Course_USTC\QRS_Render\src\Core\CubeMesh.cpp" />
-    <ClCompile Include="E:\Course_USTC\QRS_Render\src\Core\Mesh.cpp" />
+    <ClCompile Include="E:\Course_USTC\QRS_Render\src\main.cpp" />
     <ClCompile Include="E:\Course_USTC\QRS_Render\src\Core\Platform.cpp" />
     <ClCompile Include="E:\Course_USTC\QRS_Render\src\Core\Render.cpp" />
+    <ClCompile Include="E:\Course_USTC\QRS_Render\src\Core\Mesh.cpp" />
+    <ClCompile Include="E:\Course_USTC\QRS_Render\src\Core\CubeMesh.cpp" />
+    <ClCompile Include="E:\Course_USTC\QRS_Render\src\Core\PanelMesh.cpp" />
     <ClCompile Include="E:\Course_USTC\QRS_Render\src\Math\MathTool.cpp" />
-    <ClCompile Include="E:\Course_USTC\QRS_Render\src\main.cpp" />
+    <ClCompile Include="E:\Course_USTC\QRS_Render\external\glad\src\glad.c" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="E:\Course_USTC\QRS_Render\build\ZERO_CHECK.vcxproj">

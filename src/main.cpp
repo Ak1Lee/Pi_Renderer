@@ -485,6 +485,61 @@
 #define SDL_MAIN_HANDLED
 #include <SDL.h>
 
+class Camera
+{
+    public:
+        float position[3];
+        float target[3];
+        float up[3];
+
+        float aspect = 1.0f;
+        float FOVY = M_PI / 4.0f; // 45 degrees in radians
+        float NearZ = 0.1f;
+        float FarZ = 100.0f;
+
+        float view[16];
+        float perspective[16];
+        float vp[16];
+
+
+        Camera(float pos[3], float tar[3], float upVec[3], float aspectRatio = 1.0f, float fovY = M_PI / 4.0f, float nearZ = 0.1f, float farZ = 100.0f) {
+            for (int i = 0; i < 3; ++i) {
+                position[i] = pos[i];
+                target[i] = tar[i];
+                up[i] = upVec[i];
+            }
+            this->aspect = aspectRatio;
+            this->FOVY = fovY;
+            this->NearZ = nearZ;
+            this->FarZ = farZ;
+            createLookAtMatrix(position, target, up, view);
+            createPerspectiveMatrix(FOVY, aspect, NearZ, FarZ, perspective);
+            multiplyMatrices(perspective, view, vp);
+        }
+        void updateMatrix() {
+            createLookAtMatrix(position, target, up, view);
+            createPerspectiveMatrix(FOVY, aspect, NearZ, FarZ, perspective);
+            multiplyMatrices(perspective, view, vp);
+
+        }
+
+};
+float mazeCenterX = 0.0f;
+float mazeCenterY = 0.0f;
+const int mazeWidth = 10;
+const int mazeHeight = 10;
+int maze[mazeHeight][mazeWidth] = {
+    {1,1,1,1,1,1,1,1,1,1},
+    {1,0,0,0,0,0,0,0,0,1},
+    {1,0,1,1,1,0,1,1,0,1},
+    {1,0,1,0,0,0,0,1,0,1},
+    {1,0,1,0,1,1,0,1,0,1},
+    {1,0,0,0,1,0,0,1,0,1},
+    {1,1,1,0,1,0,1,1,0,1},
+    {1,0,0,0,0,0,1,0,0,1},
+    {1,0,1,1,1,0,0,0,0,1},
+    {1,1,1,1,1,1,1,1,1,1}
+};
 
 int main() {
     std::cout << "Program started" << std::endl;
@@ -501,7 +556,9 @@ int main() {
 
     bool running = true;
     float aspect = 800.0f / 600.0f;
-    float proj[16], view[16], model[16], tmp[16], mvp[16],vp[16];
+    // float proj[16], view[16], model[16], tmp[16], mvp[16],vp[16];
+    float model[16];
+    float PanelModel[16];
 
     const float targetFrameTime = 1000.0f / 60.0f; // 60帧
     Uint32 lastTicks = SDL_GetTicks();
@@ -509,7 +566,21 @@ int main() {
 
     std::cout << "Init :"<< std::endl;
 
+    // float eye[3] = {0, 0, 5};
+    // float center[3] = {0, 0, 0.0f};
+    // float up[3] = {0, 1, 0}; 
+
+    float eye[3] = {mazeWidth / 2.0f, mazeHeight / 2.0f, 15.0f};    // z=10，正上方
+    float center[3] = {mazeWidth / 2.0f, mazeHeight / 2.0f, 0.0f};  // 看向中心
+    float up[3] = {0, 1, 0};
+
+    std::vector<float*> models;
+
+
+    Camera camera(eye, center, up, aspect, M_PI / 4.0f, 0.1f, 100.0f);
+
     while (running) {
+        models.clear();
         Uint32 frameStart = SDL_GetTicks();
 
         pollEvents(running);
@@ -520,34 +591,54 @@ int main() {
         // 1秒转半圈
         float angle = fmod(totalTime * 180.0f, 360.0f);
 
-        createModelMatrix(model, angle, angle);
-        float pos[3] = {1, 0, 0};
-        float rot[3] = {angle, angle, 0};
-        float scale[3] = {1, 1, 1};
+        for (int y = 0; y < mazeHeight; ++y) {
+            for (int x = 0; x < mazeWidth; ++x) {
+                if (maze[y][x] == 1) { // 是墙
+                    float pos[3] = { (float)x, (float)y, 0.0f}; // y轴向下
+                    float rot[3] = {0, 0, 0};
+                    float scale[3] = {1, 1, 2};
+                    float* model = new float[16];
+                    createModelMatrix1(model, pos, rot, scale);
+                    models.push_back(model);
+                }
+            }
+        }
+    
+        float pos[3] = {mazeHeight/2.f, mazeWidth/2.f, 0.0f};
+        float rot[3] = {0, 3.14f/2, 0}; // 只绕Y轴旋转
+        float scale[3] = {10, 10, 10};
         createModelMatrix1(model, pos, rot, scale);
-        createPerspectiveMatrix(M_PI / 4.0f, aspect, 0.1f, 100.0f, proj);
-        float eye[3] = {0.0f, 0.0f, 5.0f};
-        float center[3] = {0.0f, 0.0f, 0.0f};
-        float up[3] = {0.0f, 1.0f, 0.0f};
-        createLookAtMatrix(eye, center, up, view);
 
-        multiplyMatrices(view, model, tmp);
-        multiplyMatrices(proj, tmp, mvp);
 
-        multiplyMatrices(proj, view, vp);
-        std::vector<float*> models;
-        models.push_back(model);
-        float pos1[3] = {-1, 0, 0};
-        float model1[16];
-        createModelMatrix1(model1, pos1, rot, scale);
-        models.push_back(model1);
+        // createModelMatrix(model, angle, angle);
+        // float pos[3] = {1, 0, 0};
+        // float rot[3] = {angle, angle, 0};
+        // float scale[3] = {1, 1, 1};
+        // createModelMatrix1(model, pos, rot, scale);
+        // createPerspectiveMatrix(M_PI / 4.0f, aspect, 0.1f, 100.0f, proj);
+        // float eye[3] = {0.0f, 0.0f, 5.0f};
+        // float center[3] = {0.0f, 0.0f, 0.0f};
+        // float up[3] = {0.0f, 1.0f, 0.0f};
+        // createLookAtMatrix(eye, center, up, view);
+        // multiplyMatrices(view, model, tmp);
+        // multiplyMatrices(proj, tmp, mvp);
+        // multiplyMatrices(proj, view, vp);
+
+
+        // std::vector<float*> models;
+        // models.push_back(model);
+        // float pos1[3] = {-1, 0, 0};
+        // float model1[16];
+        // createModelMatrix1(model1, pos1, rot, scale);
+        // models.push_back(model1);
 
 
 
 
         renderer.resize(800, 600);
         //renderer.render(mvp, model);
-        renderer.render(vp, models);
+        renderer.render(camera.vp, models);
+        renderer.renderPanel(camera.vp, model);
         swapBuffers();
 
         // 固定帧率

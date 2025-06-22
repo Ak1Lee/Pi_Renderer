@@ -1,42 +1,52 @@
 #include "Core/Renderer.h"
 #include "Math/MathTool.h"
 #include <SDL.h>
+#ifdef USE_DESKTOP_GL
 #include <glad/glad.h>
+#else
+#include <GLES2/gl2.h>
+#endif
 #include <iostream>
+#include "Core/Renderer.h"
 
 using namespace Core;
 
+
+
 static const char* vertexShaderSrc = R"(
-#version 330 core
-layout(location = 0) in vec3 a_position;
-layout(location = 1) in vec3 a_normal;
+#version 300 es
+precision mediump float;
+in vec3 a_position;
+in vec3 a_normal;
 uniform mat4 u_mvpMatrix;
 uniform mat4 u_modelMatrix;
 out vec3 v_normal;
 void main() {
     gl_Position = u_mvpMatrix * vec4(a_position, 1.0);
     v_normal = mat3(transpose(inverse(u_modelMatrix))) * a_normal;
-    //v_normal = a_normal;
-    
 }
 )";
 
 static const char* fragmentShaderSrc = R"(
-#version 330 core
+#version 300 es
+precision mediump float;
+out vec4 fragColor;
 in vec3 v_normal;
-out vec4 FragColor;
 uniform vec4 u_color;
 uniform vec3 u_lightDir;
 void main() {
     float NdotL = dot(normalize(v_normal), normalize(-u_lightDir));
-    float diff = NdotL * 0.5 + 0.5; // 半兰伯特公式
+    float diff = NdotL * 0.5 + 0.5;
     diff = clamp(diff, 0.0, 1.0);
     vec3 diffuse = diff * u_color.rgb;
-    FragColor = vec4(diffuse, u_color.a);
-    //FragColor = vec4(1,0,0,1);
-    //FragColor = vec4(normalize(v_normal) * 0.5 + 0.5, 1.0);
+
+    fragColor = vec4(diffuse, u_color.a);
 }
 )";
+
+
+
+
 
 bool Renderer::compileShaders() {
     auto compile = [&](unsigned int type, const char* src) {
@@ -104,8 +114,25 @@ void Renderer::render(const float vp[16], const std::vector<float*>& modelMatric
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram,"u_mvpMatrix"),1,GL_FALSE,mvp);
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram,"u_modelMatrix"),1,GL_FALSE,model);
         Cube.draw();
+        // Panel.draw(); // 如果需要绘制面板，可以在这里调用
     }
+}
+void Core::Renderer::renderPanel(const float vp[16], const float model[16])
+{
+    //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glUseProgram(shaderProgram);
+    glUniform4f(glGetUniformLocation(shaderProgram,"u_color"),1.f,1.f,1.f,1.0f);
+    glUniform3f(glGetUniformLocation(shaderProgram, "u_lightDir"), 0.2f, 0.6f, 0.8f);
+
+    float mvp[16];
+    multiplyMatrices(vp, model, mvp); // mvp = vp * model
+
+    glUniformMatrix4fv(glGetUniformLocation(shaderProgram,"u_mvpMatrix"),1,GL_FALSE,mvp);
+    glUniformMatrix4fv(glGetUniformLocation(shaderProgram,"u_modelMatrix"),1,GL_FALSE,model);
+
+    Panel.draw(); // 使用 PanelMesh 类来绘制面板
 }
 void Renderer::shutdown() {
     glDeleteProgram(shaderProgram); // Delete shader program
 }
+

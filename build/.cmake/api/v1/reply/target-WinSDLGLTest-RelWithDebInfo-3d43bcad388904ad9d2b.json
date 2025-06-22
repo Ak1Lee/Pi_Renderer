@@ -2,10 +2,10 @@
 	"artifacts" : 
 	[
 		{
-			"path" : "Debug/WinSDLGLTest.exe"
+			"path" : "RelWithDebInfo/WinSDLGLTest.exe"
 		},
 		{
-			"path" : "Debug/WinSDLGLTest.pdb"
+			"path" : "RelWithDebInfo/WinSDLGLTest.pdb"
 		}
 	],
 	"backtrace" : 1,
@@ -31,7 +31,7 @@
 			{
 				"command" : 0,
 				"file" : 0,
-				"line" : 44,
+				"line" : 57,
 				"parent" : 0
 			},
 			{
@@ -43,7 +43,7 @@
 			{
 				"command" : 2,
 				"file" : 0,
-				"line" : 46,
+				"line" : 59,
 				"parent" : 0
 			},
 			{
@@ -61,7 +61,7 @@
 			{
 				"command" : 4,
 				"file" : 0,
-				"line" : 29,
+				"line" : 31,
 				"parent" : 0
 			}
 		]
@@ -72,42 +72,7 @@
 			"compileCommandFragments" : 
 			[
 				{
-					"fragment" : "/DWIN32 /D_WINDOWS /W3 /MDd /Zi /Ob0 /Od /RTC1"
-				}
-			],
-			"defines" : 
-			[
-				{
-					"backtrace" : 4,
-					"define" : "USE_DESKTOP_GL"
-				}
-			],
-			"includes" : 
-			[
-				{
-					"backtrace" : 5,
-					"path" : "E:/Course_USTC/QRS_Render/external/SDL2/include"
-				},
-				{
-					"backtrace" : 5,
-					"path" : "E:/Course_USTC/QRS_Render/include"
-				},
-				{
-					"backtrace" : 6,
-					"path" : "E:/Course_USTC/QRS_Render/external/glad/include"
-				}
-			],
-			"language" : "C",
-			"sourceIndexes" : 
-			[
-				0
-			]
-		},
-		{
-			"compileCommandFragments" : 
-			[
-				{
-					"fragment" : "/DWIN32 /D_WINDOWS /W3 /GR /EHsc /MDd /Zi /Ob0 /Od /RTC1"
+					"fragment" : "/DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /Zi /O2 /Ob1 /DNDEBUG"
 				}
 			],
 			"defines" : 
@@ -143,12 +108,48 @@
 			},
 			"sourceIndexes" : 
 			[
+				0,
 				1,
 				2,
 				3,
 				4,
 				5,
 				6
+			]
+		},
+		{
+			"compileCommandFragments" : 
+			[
+				{
+					"fragment" : "/DWIN32 /D_WINDOWS /W3 /MD /Zi /O2 /Ob1 /DNDEBUG"
+				}
+			],
+			"defines" : 
+			[
+				{
+					"backtrace" : 4,
+					"define" : "USE_DESKTOP_GL"
+				}
+			],
+			"includes" : 
+			[
+				{
+					"backtrace" : 5,
+					"path" : "E:/Course_USTC/QRS_Render/external/SDL2/include"
+				},
+				{
+					"backtrace" : 5,
+					"path" : "E:/Course_USTC/QRS_Render/include"
+				},
+				{
+					"backtrace" : 6,
+					"path" : "E:/Course_USTC/QRS_Render/external/glad/include"
+				}
+			],
+			"language" : "C",
+			"sourceIndexes" : 
+			[
+				7
 			]
 		}
 	],
@@ -164,7 +165,7 @@
 		"commandFragments" : 
 		[
 			{
-				"fragment" : "/DWIN32 /D_WINDOWS /W3 /GR /EHsc /MDd /Zi /Ob0 /Od /RTC1",
+				"fragment" : "/DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /Zi /O2 /Ob1 /DNDEBUG",
 				"role" : "flags"
 			},
 			{
@@ -175,6 +176,16 @@
 				"backtrace" : 2,
 				"fragment" : "-LIBPATH:E:\\Course_USTC\\QRS_Render\\external\\SDL2\\lib\\x64",
 				"role" : "libraryPath"
+			},
+			{
+				"backtrace" : 3,
+				"fragment" : "SDL2.lib",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 3,
+				"fragment" : "opengl32.lib",
+				"role" : "libraries"
 			},
 			{
 				"backtrace" : 3,
@@ -212,7 +223,8 @@
 				3,
 				4,
 				5,
-				6
+				6,
+				7
 			]
 		}
 	],
@@ -221,43 +233,49 @@
 		{
 			"backtrace" : 1,
 			"compileGroupIndex" : 0,
-			"path" : "external/glad/src/glad.c",
+			"path" : "src/main.cpp",
 			"sourceGroupIndex" : 0
 		},
 		{
 			"backtrace" : 1,
-			"compileGroupIndex" : 1,
-			"path" : "src/Core/CubeMesh.cpp",
-			"sourceGroupIndex" : 0
-		},
-		{
-			"backtrace" : 1,
-			"compileGroupIndex" : 1,
-			"path" : "src/Core/Mesh.cpp",
-			"sourceGroupIndex" : 0
-		},
-		{
-			"backtrace" : 1,
-			"compileGroupIndex" : 1,
+			"compileGroupIndex" : 0,
 			"path" : "src/Core/Platform.cpp",
 			"sourceGroupIndex" : 0
 		},
 		{
 			"backtrace" : 1,
-			"compileGroupIndex" : 1,
+			"compileGroupIndex" : 0,
 			"path" : "src/Core/Render.cpp",
 			"sourceGroupIndex" : 0
 		},
 		{
 			"backtrace" : 1,
-			"compileGroupIndex" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/Core/Mesh.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/Core/CubeMesh.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/Core/PanelMesh.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
 			"path" : "src/Math/MathTool.cpp",
 			"sourceGroupIndex" : 0
 		},
 		{
 			"backtrace" : 1,
 			"compileGroupIndex" : 1,
-			"path" : "src/main.cpp",
+			"path" : "external/glad/src/glad.c",
 			"sourceGroupIndex" : 0
 		}
 	],
