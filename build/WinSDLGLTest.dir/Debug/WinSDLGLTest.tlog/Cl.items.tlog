@@ -1,9 +1,0 @@
-E:\SchoolWork\Pi_Renderer\src\main.cpp;E:\SchoolWork\Pi_Renderer\build\WinSDLGLTest.dir\Debug\main.obj
-E:\SchoolWork\Pi_Renderer\src\Core\Platform.cpp;E:\SchoolWork\Pi_Renderer\build\WinSDLGLTest.dir\Debug\Platform.obj
-E:\SchoolWork\Pi_Renderer\src\Core\Render.cpp;E:\SchoolWork\Pi_Renderer\build\WinSDLGLTest.dir\Debug\Render.obj
-E:\SchoolWork\Pi_Renderer\src\Core\Mesh.cpp;E:\SchoolWork\Pi_Renderer\build\WinSDLGLTest.dir\Debug\Mesh.obj
-E:\SchoolWork\Pi_Renderer\src\Core\CubeMesh.cpp;E:\SchoolWork\Pi_Renderer\build\WinSDLGLTest.dir\Debug\CubeMesh.obj
-E:\SchoolWork\Pi_Renderer\src\Core\PanelMesh.cpp;E:\SchoolWork\Pi_Renderer\build\WinSDLGLTest.dir\Debug\PanelMesh.obj
-E:\SchoolWork\Pi_Renderer\src\Math\MathTool.cpp;E:\SchoolWork\Pi_Renderer\build\WinSDLGLTest.dir\Debug\MathTool.obj
-E:\SchoolWork\Pi_Renderer\src\Core\InstanceBase.cpp;E:\SchoolWork\Pi_Renderer\build\WinSDLGLTest.dir\Debug\InstanceBase.obj
-E:\SchoolWork\Pi_Renderer\external\glad\src\glad.c;E:\SchoolWork\Pi_Renderer\build\WinSDLGLTest.dir\Debug\glad.obj

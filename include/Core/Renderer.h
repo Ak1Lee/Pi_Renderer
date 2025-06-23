@@ -25,7 +25,9 @@ public:
     
     void render(const float vp[16], const std::vector<float*>& modelMatrices);
     // 清理资源
-    void renderv3(const float vp[16], const std::vector<Core::Instance*>& instances);
+    void renderStaticInstances(const float vp[16], const std::vector<Core::Instance*>& instances);
+
+    void renderDynamicInstances(const float vp[16], const std::vector<Core::Instance*>& instances);
 
     void renderPanel(const float vp[16],const float model[16]);
 

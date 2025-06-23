@@ -9,6 +9,7 @@
 #include <iostream>
 #include "Core/Renderer.h"
 
+
 using namespace Core;
 
 
@@ -137,10 +138,27 @@ void Core::Renderer::renderPanel(const float vp[16], const float model[16])
 void Renderer::shutdown() {
     glDeleteProgram(shaderProgram); // Delete shader program
 }
-void Renderer::renderv3(const float vp[16], const std::vector<Instance*>& instances) {
+void Renderer::renderStaticInstances(const float vp[16], const std::vector<Instance*>& instances) {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glUseProgram(shaderProgram);
 
+    for (const auto& inst : instances) {
+        float mvp[16];
+        multiplyMatrices(vp, inst->modelMatrix, mvp);
+
+        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "u_mvpMatrix"), 1, GL_FALSE, mvp);
+        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "u_modelMatrix"), 1, GL_FALSE, inst->modelMatrix);
+        glUniform4fv(glGetUniformLocation(shaderProgram, "u_color"), 1, inst->color);
+        // 如有自发光
+        glUniform4fv(glGetUniformLocation(shaderProgram, "u_emissive"), 1, inst->emissive);
+
+        inst->mesh->draw();
+    }
+}
+
+void Core::Renderer::renderDynamicInstances(const float vp[16], const std::vector<Core::Instance *> &instances)
+{
+    glUseProgram(shaderProgram);
     for (const auto& inst : instances) {
         float mvp[16];
         multiplyMatrices(vp, inst->modelMatrix, mvp);

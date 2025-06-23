@@ -12,11 +12,16 @@ namespace Platform {
 static SDL_Window* window = nullptr;
 static SDL_GLContext glContext = nullptr;
 
+
+
 bool initWindow(int width, int height) {
-    if (SDL_Init(SDL_INIT_VIDEO) != 0) {
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) != 0) {
         std::cerr << "SDL_Init Error: " << SDL_GetError() << std::endl;
         return false;
     }
+
+    SDL_StartTextInput();
+
     // 设置 OpenGL / OpenGL ES 上下文属性
 #ifdef USE_DESKTOP_GL
     // Windows: 桌面 OpenGL 3.3 Core Profile
@@ -59,13 +64,26 @@ bool initWindow(int width, int height) {
     return true;
 }
 
-void pollEvents(bool &running) {
+void pollEvents(bool &running, InputState &in) {
     SDL_Event ev;
     while (SDL_PollEvent(&ev)) {
+        std::cout << "Event: " << ev.type << std::endl;
         if (ev.type == SDL_QUIT) {
             running = false;
         }
     }
+    // 连续查询键盘状态
+    const Uint8* state = SDL_GetKeyboardState(nullptr);
+    in.up    = state[SDL_SCANCODE_W];
+    in.down  = state[SDL_SCANCODE_S];
+    in.left  = state[SDL_SCANCODE_A];
+    in.right = state[SDL_SCANCODE_D];
+}
+
+// 保持兼容：只有退出检测
+void pollEvents(bool &running) {
+    InputState dummy;
+    pollEvents(running, dummy);
 }
 
 void swapBuffers() {

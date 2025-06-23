@@ -33,10 +33,17 @@ public:
     CubeInstance(Mesh* mesh) : Instance(mesh) {}
     // 可添加Cube专属属性
 };
+
 class PanelInstance : public Instance {
 public:
     PanelInstance(Mesh* mesh) : Instance(mesh) {}
     // 可添加Panel专属属性
+};
+
+class SphereInstance : public Instance {
+public:
+    SphereInstance(Mesh* mesh) : Instance(mesh) {}
+    // 可添加Sphere专属属性
 };
 
 
