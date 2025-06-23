@@ -34,13 +34,15 @@ out vec4 fragColor;
 in vec3 v_normal;
 uniform vec4 u_color;
 uniform vec3 u_lightDir;
+uniform vec4 u_emissive; // 新增自发光
 void main() {
     float NdotL = dot(normalize(v_normal), normalize(-u_lightDir));
     float diff = NdotL * 0.5 + 0.5;
     diff = clamp(diff, 0.0, 1.0);
     vec3 diffuse = diff * u_color.rgb;
+    vec3 emissive = u_emissive.rgb; 
 
-    fragColor = vec4(diffuse, u_color.a);
+    fragColor = vec4(diffuse + emissive, u_color.a);
 }
 )";
 
@@ -135,4 +137,20 @@ void Core::Renderer::renderPanel(const float vp[16], const float model[16])
 void Renderer::shutdown() {
     glDeleteProgram(shaderProgram); // Delete shader program
 }
+void Renderer::renderv3(const float vp[16], const std::vector<Instance*>& instances) {
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glUseProgram(shaderProgram);
 
+    for (const auto& inst : instances) {
+        float mvp[16];
+        multiplyMatrices(vp, inst->modelMatrix, mvp);
+
+        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "u_mvpMatrix"), 1, GL_FALSE, mvp);
+        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "u_modelMatrix"), 1, GL_FALSE, inst->modelMatrix);
+        glUniform4fv(glGetUniformLocation(shaderProgram, "u_color"), 1, inst->color);
+        // 如有自发光
+        glUniform4fv(glGetUniformLocation(shaderProgram, "u_emissive"), 1, inst->emissive);
+
+        inst->mesh->draw();
+    }
+}

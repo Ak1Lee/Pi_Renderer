@@ -476,6 +476,8 @@
 #include "Core/Platform.h"
 #include "Core/Mesh.h"
 #include "Core/CubeMesh.h"
+#include "Core/PanelMesh.h"
+#include "Core/InstanceBase.h"
 #include "Core/Renderer.h"
 #include "Math/MathTool.h"
 #include <cmath>
@@ -579,6 +581,38 @@ int main() {
 
     Camera camera(eye, center, up, aspect, M_PI / 4.0f, 0.1f, 100.0f);
 
+    
+
+    Core::CubeMesh cubeMesh;
+    Core::PanelMesh panelMesh;
+    std::vector<Core::Instance*> instances;
+    for (int y = 0; y < mazeHeight; ++y) {
+        for (int x = 0; x < mazeWidth; ++x) {
+            if (maze[y][x] == 1) { // 是墙
+                float pos[3] = { (float)x, (float)y, 0.0f}; // y轴向下
+                float rot[3] = {0, 0, 0};
+                float scale[3] = {1, 1, 2};
+                float* model = new float[16];
+                createModelMatrix1(model, pos, rot, scale);
+                Core::Instance* instance = new Core::CubeInstance(&cubeMesh);
+                instance->setModelMatrix(model);
+                instance->setColor(0.7f, 0.7f, 0.3f, 1.0f);
+                instance->setEmissive(0.4f, 0.2f, 0.1f, 1.0f);
+                instances.push_back(instance);
+
+            }
+        }
+    }
+    Core::Instance* instance = new Core::PanelInstance(&panelMesh);
+    float pos[3] = {mazeHeight/2.f, mazeWidth/2.f, 0.0f};
+    float rot[3] = {0, 3.14f/2, 0}; // 只绕Y轴旋转
+    float scale[3] = {10, 10, 10}; 
+    createModelMatrix1(PanelModel, pos, rot, scale);
+    instance->setModelMatrix(PanelModel);
+    instance->setColor(0.7f, 0.7f, 1.0f, 1.0f);
+    instances.push_back(instance);
+
+
     while (running) {
         models.clear();
         Uint32 frameStart = SDL_GetTicks();
@@ -591,18 +625,18 @@ int main() {
         // 1秒转半圈
         float angle = fmod(totalTime * 180.0f, 360.0f);
 
-        for (int y = 0; y < mazeHeight; ++y) {
-            for (int x = 0; x < mazeWidth; ++x) {
-                if (maze[y][x] == 1) { // 是墙
-                    float pos[3] = { (float)x, (float)y, 0.0f}; // y轴向下
-                    float rot[3] = {0, 0, 0};
-                    float scale[3] = {1, 1, 2};
-                    float* model = new float[16];
-                    createModelMatrix1(model, pos, rot, scale);
-                    models.push_back(model);
-                }
-            }
-        }
+        // for (int y = 0; y < mazeHeight; ++y) {
+        //     for (int x = 0; x < mazeWidth; ++x) {
+        //         if (maze[y][x] == 1) { // 是墙
+        //             float pos[3] = { (float)x, (float)y, 0.0f}; // y轴向下
+        //             float rot[3] = {0, 0, 0};
+        //             float scale[3] = {1, 1, 2};
+        //             float* model = new float[16];
+        //             createModelMatrix1(model, pos, rot, scale);
+        //             models.push_back(model);
+        //         }
+        //     }
+        // }
     
         float pos[3] = {mazeHeight/2.f, mazeWidth/2.f, 0.0f};
         float rot[3] = {0, 3.14f/2, 0}; // 只绕Y轴旋转
@@ -610,34 +644,10 @@ int main() {
         createModelMatrix1(model, pos, rot, scale);
 
 
-        // createModelMatrix(model, angle, angle);
-        // float pos[3] = {1, 0, 0};
-        // float rot[3] = {angle, angle, 0};
-        // float scale[3] = {1, 1, 1};
-        // createModelMatrix1(model, pos, rot, scale);
-        // createPerspectiveMatrix(M_PI / 4.0f, aspect, 0.1f, 100.0f, proj);
-        // float eye[3] = {0.0f, 0.0f, 5.0f};
-        // float center[3] = {0.0f, 0.0f, 0.0f};
-        // float up[3] = {0.0f, 1.0f, 0.0f};
-        // createLookAtMatrix(eye, center, up, view);
-        // multiplyMatrices(view, model, tmp);
-        // multiplyMatrices(proj, tmp, mvp);
-        // multiplyMatrices(proj, view, vp);
-
-
-        // std::vector<float*> models;
-        // models.push_back(model);
-        // float pos1[3] = {-1, 0, 0};
-        // float model1[16];
-        // createModelMatrix1(model1, pos1, rot, scale);
-        // models.push_back(model1);
-
-
-
-
         renderer.resize(800, 600);
         //renderer.render(mvp, model);
-        renderer.render(camera.vp, models);
+        //renderer.render(camera.vp, models);
+        renderer.renderv3(camera.vp, instances);
         renderer.renderPanel(camera.vp, model);
         swapBuffers();
 

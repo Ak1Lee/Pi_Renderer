@@ -6,9 +6,11 @@
 #include <GLES2/gl2.h> // For OpenGL ES (Raspberry Pi)
 #endif
 #include <memory>
+#include <vector>
 #include "Mesh.h"
 #include "CubeMesh.h" // Include CubeMesh class for cube rendering
 #include "PanelMesh.h" // Include PanelMesh class for panel rendering
+#include "InstanceBase.h" // Include Instance class for rendering instances
 
 namespace Core {
 
@@ -23,6 +25,8 @@ public:
     
     void render(const float vp[16], const std::vector<float*>& modelMatrices);
     // 清理资源
+    void renderv3(const float vp[16], const std::vector<Core::Instance*>& instances);
+
     void renderPanel(const float vp[16],const float model[16]);
 
     void shutdown();

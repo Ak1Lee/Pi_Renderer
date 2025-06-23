@@ -4,7 +4,7 @@
 
 namespace Core {
 
-class CubeMesh{
+class CubeMesh : public Mesh {
 public:
     CubeMesh(); // Constructor will define cube's specific data and call Mesh::setupData
     ~CubeMesh();
@@ -15,3 +15,4 @@ private:
 };
 
 } // namespace Core
+

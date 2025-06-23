@@ -37,6 +37,7 @@ if(WIN32)
       src/Core/CubeMesh.cpp
       src/Core/PanelMesh.cpp
       src/Math/MathTool.cpp
+      src/Core/InstanceBase.cpp
       
       ${CMAKE_SOURCE_DIR}/external/glad/src/glad.c
   )
@@ -50,6 +51,7 @@ else()
       src/Core/CubeMesh.cpp
       src/Math/MathTool.cpp
       src/Core/PanelMesh.cpp
+      src/Core/InstanceBase.cpp
   )
 endif()
 
