@@ -60,11 +60,6 @@ endif()
 # 可执行文件
 add_executable(${PROJECT_NAME} ${SRC_FILES})
 
-target_link_libraries(${PROJECT_NAME}
-    SDL2
-    opengl32
-)
-
 if (WIN32)
     target_link_libraries(${PROJECT_NAME}
         SDL2
@@ -74,5 +69,6 @@ else()
     target_link_libraries(${PROJECT_NAME}
         SDL2
         GLESv2
+        wiringPi
     )
 endif()

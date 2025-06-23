@@ -192,6 +192,7 @@ int main() {
         else if (input.right) playerPos[0] += 0.1f;
     #else
         // 树莓派下用GPIO
+        Platform::pollEvents(running);
         if (digitalRead(17) == LOW) playerPos[1] += 0.1f;   // 上
         else if (digitalRead(18) == LOW) playerPos[1] -= 0.1f; // 下
         else if (digitalRead(27) == LOW) playerPos[0] -= 0.1f; // 左
