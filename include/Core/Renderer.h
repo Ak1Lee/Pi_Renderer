@@ -31,12 +31,33 @@ public:
 
     void renderPanel(const float vp[16],const float model[16]);
 
+    void OneFrameRenderFinish();
+
     void shutdown();
 private:
     unsigned int shaderProgram;
     unsigned int vao;
     unsigned int vbo;
     unsigned int ebo;
+
+    //FBO
+    unsigned int sceneFBO = 0;
+    unsigned int sceneColorTex = 0;
+    unsigned int sceneDepthRBO = 0;
+
+    unsigned int quadVAO = 0, quadVBO = 0;
+    unsigned int quadShaderProgram = 0;
+
+
+
+    //Blur FBO
+    unsigned int blurFBO[2] = {0,0};
+    unsigned int blurTex[2] = {0,0};
+
+    unsigned int blurVAO = 0, blurVBO = 0;
+    unsigned int blurShaderProgram = 0;
+
+
     int indexCount;
     bool compileShaders();
 

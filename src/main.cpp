@@ -231,6 +231,7 @@ int main() {
         renderer.renderStaticInstances(camera.vp, StaticInstances);
         renderer.renderDynamicInstances(camera.vp, DynamicInstances);
         renderer.renderPanel(camera.vp, model);
+        renderer.OneFrameRenderFinish();
         swapBuffers();
 
         // 固定帧率

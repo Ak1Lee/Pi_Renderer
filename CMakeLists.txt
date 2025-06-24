@@ -19,11 +19,6 @@ else()
     )
 endif()
 
-# SDL2：手动指定 include 和 lib 目录
-# include_directories(
-#     ${CMAKE_SOURCE_DIR}/external/SDL2/include
-#     ${CMAKE_SOURCE_DIR}/include
-#     )
 
 # glad loader
 if(WIN32)
@@ -70,5 +65,16 @@ else()
         SDL2
         GLESv2
         wiringPi
+    )
+endif()
+
+if (WIN32)
+    set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
+
+    # 复制SDL2.dll到输出目录
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_SOURCE_DIR}/external/SDL2/lib/x64/SDL2.dll"
+        "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
     )
 endif()
