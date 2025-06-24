@@ -1,0 +1,10 @@
+^E:\SCHOOLWORK\PI_RENDERER\BUILD\CMAKEFILES\C3E4C924AD60520AE53D43B1F74A9CA3\GENERATE.STAMP.RULE
+setlocal
+"C:\Program Files\Microsoft Visual Studio\2022\Professional\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -SE:/SchoolWork/Pi_Renderer -BE:/SchoolWork/Pi_Renderer/build --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file E:/SchoolWork/Pi_Renderer/build/WinSDLGLTest.sln
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
