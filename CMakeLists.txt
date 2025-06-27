@@ -27,7 +27,7 @@ if(WIN32)
   set(SRC_FILES
       src/main.cpp
       src/Core/Platform.cpp
-      src/Core/Render.cpp
+      src/Core/Renderer.cpp
       src/Core/Mesh.cpp
       src/Core/CubeMesh.cpp
       src/Core/PanelMesh.cpp
@@ -42,7 +42,7 @@ else()
   set(SRC_FILES
       src/main.cpp
       src/Core/Platform.cpp
-      src/Core/Render.cpp
+      src/Core/Renderer.cpp
       src/Core/Mesh.cpp
       src/Core/CubeMesh.cpp
       src/Math/MathTool.cpp

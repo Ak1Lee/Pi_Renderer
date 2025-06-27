@@ -2,10 +2,10 @@
 	"artifacts" : 
 	[
 		{
-			"path" : "RelWithDebInfo/WinSDLGLTest.exe"
+			"path" : "Debug/WinSDLGLTest.exe"
 		},
 		{
-			"path" : "RelWithDebInfo/WinSDLGLTest.pdb"
+			"path" : "Debug/WinSDLGLTest.pdb"
 		}
 	],
 	"backtrace" : 1,
@@ -72,7 +72,7 @@
 			"compileCommandFragments" : 
 			[
 				{
-					"fragment" : "/DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /Zi /O2 /Ob1 /DNDEBUG"
+					"fragment" : "/DWIN32 /D_WINDOWS /W3 /GR /EHsc /MDd /Zi /Ob0 /Od /RTC1"
 				}
 			],
 			"defines" : 
@@ -86,15 +86,15 @@
 			[
 				{
 					"backtrace" : 5,
-					"path" : "E:/SchoolWork/Pi_Renderer/external/SDL2/include"
+					"path" : "E:/Course_USTC/QRS_Render/external/SDL2/include"
 				},
 				{
 					"backtrace" : 5,
-					"path" : "E:/SchoolWork/Pi_Renderer/include"
+					"path" : "E:/Course_USTC/QRS_Render/include"
 				},
 				{
 					"backtrace" : 6,
-					"path" : "E:/SchoolWork/Pi_Renderer/external/glad/include"
+					"path" : "E:/Course_USTC/QRS_Render/external/glad/include"
 				}
 			],
 			"language" : "CXX",
@@ -123,7 +123,7 @@
 			"compileCommandFragments" : 
 			[
 				{
-					"fragment" : "/DWIN32 /D_WINDOWS /W3 /MD /Zi /O2 /Ob1 /DNDEBUG"
+					"fragment" : "/DWIN32 /D_WINDOWS /W3 /MDd /Zi /Ob0 /Od /RTC1"
 				}
 			],
 			"defines" : 
@@ -137,15 +137,15 @@
 			[
 				{
 					"backtrace" : 5,
-					"path" : "E:/SchoolWork/Pi_Renderer/external/SDL2/include"
+					"path" : "E:/Course_USTC/QRS_Render/external/SDL2/include"
 				},
 				{
 					"backtrace" : 5,
-					"path" : "E:/SchoolWork/Pi_Renderer/include"
+					"path" : "E:/Course_USTC/QRS_Render/include"
 				},
 				{
 					"backtrace" : 6,
-					"path" : "E:/SchoolWork/Pi_Renderer/external/glad/include"
+					"path" : "E:/Course_USTC/QRS_Render/external/glad/include"
 				}
 			],
 			"language" : "C",
@@ -167,7 +167,7 @@
 		"commandFragments" : 
 		[
 			{
-				"fragment" : "/DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /Zi /O2 /Ob1 /DNDEBUG",
+				"fragment" : "/DWIN32 /D_WINDOWS /W3 /GR /EHsc /MDd /Zi /Ob0 /Od /RTC1",
 				"role" : "flags"
 			},
 			{
@@ -176,7 +176,7 @@
 			},
 			{
 				"backtrace" : 2,
-				"fragment" : "-LIBPATH:E:\\SchoolWork\\Pi_Renderer\\external\\SDL2\\lib\\x64",
+				"fragment" : "-LIBPATH:E:\\Course_USTC\\QRS_Render\\external\\SDL2\\lib\\x64",
 				"role" : "libraryPath"
 			},
 			{
@@ -239,7 +239,7 @@
 		{
 			"backtrace" : 1,
 			"compileGroupIndex" : 0,
-			"path" : "src/Core/Render.cpp",
+			"path" : "src/Core/Renderer.cpp",
 			"sourceGroupIndex" : 0
 		},
 		{

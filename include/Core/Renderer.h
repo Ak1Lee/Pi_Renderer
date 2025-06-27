@@ -31,6 +31,14 @@ public:
 
     void renderPanel(const float vp[16],const float model[16]);
 
+    void renderEmissiveToRadianceFBO(const float vp[16], const std::vector<Instance*>& instances);
+
+    void renderDiffuseFBO(const float vp[16],const std::vector<Instance*>& instances);
+
+    void renderBlockMap(const float vp[16], const std::vector<Instance*>& instances);
+
+    void renderPPGI();
+
     void OneFrameRenderFinish();
 
     void shutdown();
@@ -48,6 +56,13 @@ private:
     unsigned int quadVAO = 0, quadVBO = 0;
     unsigned int quadShaderProgram = 0;
 
+    //BlockMapFBO
+    unsigned int blockMapFBO = 0;
+    unsigned int blockMapTex = 0;
+    unsigned int blockMapShaderProgram = 0;
+    unsigned int blockMapVAO = 0, blockMapVBO = 0;
+
+
 
 
     //Blur FBO
@@ -58,11 +73,25 @@ private:
     unsigned int blurShaderProgram = 0;
 
 
+    // radianceFBO
+    unsigned int radianceFBO = 0;
+    unsigned int radianceTex = 0;
+    unsigned int radianceShaderProgram = 0;
+    unsigned int radianceDiffuseShaderProgram = 0;
+
+    //PostProcessing
+    unsigned int postprocessingFBO_GI = 0;
+    unsigned int postprocessingTex_GI = 0;
+    unsigned int ppgiShaderProgram = 0;
+    
+
+
     int indexCount;
     bool compileShaders();
 
     CubeMesh Cube; // 使用 CubeMesh 类来处理立方体网格
     PanelMesh Panel; // 使用 PanelMesh 类来处理面板网格
+    
 
 };
 

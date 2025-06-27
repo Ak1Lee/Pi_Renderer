@@ -50,14 +50,14 @@
 				{
 					"directoryIndex" : 0,
 					"id" : "WinSDLGLTest::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-WinSDLGLTest-Debug-84b49649a4117c9f274d.json",
+					"jsonFile" : "target-WinSDLGLTest-Debug-58ce014da1b2451cc7f3.json",
 					"name" : "WinSDLGLTest",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 0,
 					"id" : "ZERO_CHECK::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-ZERO_CHECK-Debug-7232af69e5acedc15f86.json",
+					"jsonFile" : "target-ZERO_CHECK-Debug-deb8e8e5612987a98729.json",
 					"name" : "ZERO_CHECK",
 					"projectIndex" : 0
 				}
@@ -112,14 +112,14 @@
 				{
 					"directoryIndex" : 0,
 					"id" : "WinSDLGLTest::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-WinSDLGLTest-Release-d2e53f69fb36aa7abe19.json",
+					"jsonFile" : "target-WinSDLGLTest-Release-28d063d311feba76d92d.json",
 					"name" : "WinSDLGLTest",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 0,
 					"id" : "ZERO_CHECK::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-ZERO_CHECK-Release-7232af69e5acedc15f86.json",
+					"jsonFile" : "target-ZERO_CHECK-Release-deb8e8e5612987a98729.json",
 					"name" : "ZERO_CHECK",
 					"projectIndex" : 0
 				}
@@ -174,14 +174,14 @@
 				{
 					"directoryIndex" : 0,
 					"id" : "WinSDLGLTest::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-WinSDLGLTest-MinSizeRel-196416db80794fbb2c8f.json",
+					"jsonFile" : "target-WinSDLGLTest-MinSizeRel-69cf6f4a86877be6c902.json",
 					"name" : "WinSDLGLTest",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 0,
 					"id" : "ZERO_CHECK::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-ZERO_CHECK-MinSizeRel-7232af69e5acedc15f86.json",
+					"jsonFile" : "target-ZERO_CHECK-MinSizeRel-deb8e8e5612987a98729.json",
 					"name" : "ZERO_CHECK",
 					"projectIndex" : 0
 				}
@@ -236,14 +236,14 @@
 				{
 					"directoryIndex" : 0,
 					"id" : "WinSDLGLTest::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-WinSDLGLTest-RelWithDebInfo-22439a309ec62b370b3e.json",
+					"jsonFile" : "target-WinSDLGLTest-RelWithDebInfo-9a3fe315c4ecec00c32e.json",
 					"name" : "WinSDLGLTest",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 0,
 					"id" : "ZERO_CHECK::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-ZERO_CHECK-RelWithDebInfo-7232af69e5acedc15f86.json",
+					"jsonFile" : "target-ZERO_CHECK-RelWithDebInfo-deb8e8e5612987a98729.json",
 					"name" : "ZERO_CHECK",
 					"projectIndex" : 0
 				}
@@ -253,12 +253,12 @@
 	"kind" : "codemodel",
 	"paths" : 
 	{
-		"build" : "E:/SchoolWork/Pi_Renderer/build",
-		"source" : "E:/SchoolWork/Pi_Renderer"
+		"build" : "E:/Course_USTC/QRS_Render/build",
+		"source" : "E:/Course_USTC/QRS_Render"
 	},
 	"version" : 
 	{
 		"major" : 2,
-		"minor" : 6
+		"minor" : 7
 	}
 }

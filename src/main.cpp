@@ -103,7 +103,7 @@ int main() {
     // float center[3] = {0, 0, 0.0f};
     // float up[3] = {0, 1, 0}; 
 
-    float eye[3] = {mazeWidth / 2.0f, mazeHeight / 2.0f, 15.0f};    // z=10，正上方
+    float eye[3] = {mazeWidth / 2.0f, mazeHeight / 2.0f, 20.0f};
     float center[3] = {mazeWidth / 2.0f, mazeHeight / 2.0f, 0.0f};  // 看向中心
     float up[3] = {0, 1, 0};
 
@@ -119,6 +119,19 @@ int main() {
     Core::SphereMesh sphereMesh;
     std::vector<Core::Instance*> StaticInstances;
     std::vector<Core::Instance*> DynamicInstances;
+    std::vector<Core::Instance*> BlockInstances;
+
+    Core::Instance* instance = new Core::PanelInstance(&panelMesh);
+    float pos[3] = {mazeHeight/2.f, mazeWidth/2.f, 0.0f};
+    float rot[3] = {0, 3.14f/2, 0}; // 只绕Y轴旋转
+    float scale[3] = {20, 20, 20}; 
+    createModelMatrix1(PanelModel, pos, rot, scale);
+    instance->setModelMatrix(PanelModel);
+    instance->setColor(0.4f, 0.4f, 0.5f, 1.0f);
+    StaticInstances.push_back(instance);
+
+
+
     for (int y = 0; y < mazeHeight; ++y) {
         for (int x = 0; x < mazeWidth; ++x) {
             if (maze[y][x] == 1) { // 是墙
@@ -131,19 +144,14 @@ int main() {
                 instance->setModelMatrix(model);
                 instance->setColor(0.7f, 0.7f, 0.3f, 1.0f);
                 instance->setEmissive(0.4f, 0.2f, 0.1f, 1.0f);
+                instance->setEmissive(0.f, 0.f, 0.f, 0.0f);
                 StaticInstances.push_back(instance);
+                BlockInstances.push_back(instance); // 墙体实例也加入BlockMap
 
             }
         }
     }
-    Core::Instance* instance = new Core::PanelInstance(&panelMesh);
-    float pos[3] = {mazeHeight/2.f, mazeWidth/2.f, 0.0f};
-    float rot[3] = {0, 3.14f/2, 0}; // 只绕Y轴旋转
-    float scale[3] = {10, 10, 10}; 
-    createModelMatrix1(PanelModel, pos, rot, scale);
-    instance->setModelMatrix(PanelModel);
-    instance->setColor(0.7f, 0.7f, 1.0f, 1.0f);
-    StaticInstances.push_back(instance);
+
 
     //Player:
     Core::Instance* playerInstance = new Core::SphereInstance(&sphereMesh);
@@ -228,9 +236,17 @@ int main() {
         renderer.resize(800, 600);
         //renderer.render(mvp, model);
         //renderer.render(camera.vp, models);
+        // 1. 渲染自发光到radianceFBO
+        renderer.renderEmissiveToRadianceFBO(camera.vp, DynamicInstances);
+        //renderer.renderBlockMap(camera.vp, BlockInstances);
+        // 2. radiance扩散（radianceFBO -> blurFBO[0]）
+        renderer.renderDiffuseFBO(camera.vp, DynamicInstances);
         renderer.renderStaticInstances(camera.vp, StaticInstances);
         renderer.renderDynamicInstances(camera.vp, DynamicInstances);
-        renderer.renderPanel(camera.vp, model);
+
+        renderer.renderPPGI();
+        // renderer.renderPanel(camera.vp, model);
+        //renderer.renderEmissiveToRadianceFBO(camera.vp, StaticInstances);
         renderer.OneFrameRenderFinish();
         swapBuffers();
 

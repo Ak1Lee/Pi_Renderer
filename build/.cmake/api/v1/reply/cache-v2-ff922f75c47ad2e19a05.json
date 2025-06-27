@@ -15,7 +15,19 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "C:/Program Files/Microsoft Visual Studio/2022/Professional/VC/Tools/MSVC/14.38.33130/bin/Hostx64/x64/lib.exe"
+			"value" : "E:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.42.34433/bin/Hostx64/x64/lib.exe"
+		},
+		{
+			"name" : "CMAKE_BUILD_TYPE",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "No help, variable specified on the command line."
+				}
+			],
+			"type" : "STRING",
+			"value" : "Debug"
 		},
 		{
 			"name" : "CMAKE_CACHEFILE_DIR",
@@ -27,7 +39,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "e:/SchoolWork/Pi_Renderer/build"
+			"value" : "e:/Course_USTC/QRS_Render/build"
 		},
 		{
 			"name" : "CMAKE_CACHE_MAJOR_VERSION",
@@ -51,7 +63,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "27"
+			"value" : "30"
 		},
 		{
 			"name" : "CMAKE_CACHE_PATCH_VERSION",
@@ -75,7 +87,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "C:/Program Files/Microsoft Visual Studio/2022/Professional/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/bin/cmake.exe"
+			"value" : "E:/Program Files/CMake/bin/cmake.exe"
 		},
 		{
 			"name" : "CMAKE_CONFIGURATION_TYPES",
@@ -99,7 +111,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "C:/Program Files/Microsoft Visual Studio/2022/Professional/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/bin/cpack.exe"
+			"value" : "E:/Program Files/CMake/bin/cpack.exe"
 		},
 		{
 			"name" : "CMAKE_CTEST_COMMAND",
@@ -111,7 +123,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "C:/Program Files/Microsoft Visual Studio/2022/Professional/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/bin/ctest.exe"
+			"value" : "E:/Program Files/CMake/bin/ctest.exe"
 		},
 		{
 			"name" : "CMAKE_CXX_FLAGS",
@@ -431,7 +443,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "E:/SchoolWork/Pi_Renderer/build/CMakeFiles/pkgRedirects"
+			"value" : "E:/Course_USTC/QRS_Render/build/CMakeFiles/pkgRedirects"
 		},
 		{
 			"name" : "CMAKE_GENERATOR",
@@ -455,7 +467,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "C:/Program Files/Microsoft Visual Studio/2022/Professional"
+			"value" : "E:/Program Files/Microsoft Visual Studio/2022/Community"
 		},
 		{
 			"name" : "CMAKE_GENERATOR_PLATFORM",
@@ -491,7 +503,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "E:/SchoolWork/Pi_Renderer"
+			"value" : "E:/Course_USTC/QRS_Render"
 		},
 		{
 			"name" : "CMAKE_INSTALL_PREFIX",
@@ -519,7 +531,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "C:/Program Files/Microsoft Visual Studio/2022/Professional/VC/Tools/MSVC/14.38.33130/bin/Hostx64/x64/link.exe"
+			"value" : "E:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.42.34433/bin/Hostx64/x64/link.exe"
 		},
 		{
 			"name" : "CMAKE_MODULE_LINKER_FLAGS",
@@ -807,7 +819,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "C:/Program Files/Microsoft Visual Studio/2022/Professional/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.27"
+			"value" : "E:/Program Files/CMake/share/cmake-3.30"
 		},
 		{
 			"name" : "CMAKE_SHARED_LINKER_FLAGS",
@@ -1027,7 +1039,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "E:/SchoolWork/Pi_Renderer/build"
+			"value" : "E:/Course_USTC/QRS_Render/build"
 		},
 		{
 			"name" : "WinSDLGLTest_IS_TOP_LEVEL",
@@ -1051,7 +1063,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "E:/SchoolWork/Pi_Renderer"
+			"value" : "E:/Course_USTC/QRS_Render"
 		}
 	],
 	"kind" : "cache",
