@@ -45,8 +45,15 @@ public:
 
     void OneFrameRenderFinish(bool usePostProcessing = true);
 
+    // 重新初始化FBO以适应新的屏幕分辨率
+    void reinitializeFBOs(int width, int height);
+
     void shutdown();
 private:
+    // 屏幕分辨率
+    int screenWidth = 800;
+    int screenHeight = 600;
+    
     unsigned int shaderProgram;
     unsigned int vao;
     unsigned int vbo;
@@ -97,6 +104,7 @@ private:
     GLint loc_emissive = -1;
     GLint loc_lightDir = -1;
     GLint loc_radianceTex = -1;
+    GLint loc_screenSize = -1;       // 屏幕尺寸
     
     // SDF GI相关uniform变量
     GLint loc_playerScreenPos = -1;  // 玩家屏幕坐标

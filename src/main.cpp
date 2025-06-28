@@ -110,11 +110,22 @@ int main() {
         return -1;
     }
 
+    // 获取实际屏幕分辨率（全屏模式下的真实尺寸）
+    SDL_DisplayMode displayMode;
+    if (SDL_GetCurrentDisplayMode(0, &displayMode) == 0) {
+        window_width = displayMode.w;
+        window_height = displayMode.h;
+        std::cout << "Full screen resolution: " << window_width << "x" << window_height << std::endl;
+    }
+
     Core::Renderer renderer;
     if (!renderer.init()) return -1;
+    
+    // 重新初始化FBO以适应实际屏幕分辨率
+    renderer.reinitializeFBOs(window_width, window_height);
 
     bool running = true;
-    float aspect = 800.0f / 600.0f;
+    float aspect = (float)window_width / (float)window_height;
     // float proj[16], view[16], model[16], tmp[16], mvp[16],vp[16];
     float model[16];
     float PanelModel[16];
@@ -317,7 +328,7 @@ int main() {
         float scale[3] = {10, 10, 10};
         createModelMatrix1(model, pos, rot, scale);
 
-        renderer.resize(800, 600);
+        renderer.resize(window_width, window_height);
         
         // 性能优化：根据设置选择性渲染
         static int frameCount = 0;

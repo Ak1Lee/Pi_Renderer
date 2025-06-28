@@ -39,6 +39,7 @@ uniform vec4 u_color;
 uniform vec3 u_lightDir;
 uniform vec4 u_emissive; // 新增自发光
 uniform sampler2D radianceTex;
+uniform vec2 u_screenSize; // 屏幕分辨率
 in vec2 TexCoord;
 void main() {
     float NdotL = dot(normalize(v_normal), normalize(-u_lightDir));
@@ -47,7 +48,7 @@ void main() {
     vec3 diffuse = diff * u_color.rgb;
     vec3 emissive = u_emissive.rgb; 
 
-    vec2 uv = gl_FragCoord.xy / vec2(800,600);
+    vec2 uv = gl_FragCoord.xy / u_screenSize;
 
     // 降低环境光，为GI效果留出空间
     vec3 ambient = vec3(0.05, 0.05, 0.08);
@@ -668,6 +669,7 @@ bool Renderer::init() {
     loc_emissive = glGetUniformLocation(shaderProgram, "u_emissive");
     loc_lightDir = glGetUniformLocation(shaderProgram, "u_lightDir");
     loc_radianceTex = glGetUniformLocation(shaderProgram, "radianceTex");
+    loc_screenSize = glGetUniformLocation(shaderProgram, "u_screenSize");
     
     // 缓存SDF GI相关的uniform位置 - 注意这里应该等radianceDiffuseShaderProgram创建后再设置
     // 暂时先注释掉，稍后在radianceDiffuseShaderProgram创建后设置
@@ -808,7 +810,121 @@ bool Renderer::init() {
 }
 
 void Renderer::resize(int w, int h) {
+    screenWidth = w;
+    screenHeight = h;
     glViewport(0, 0, w, h);
+}
+
+void Renderer::reinitializeFBOs(int width, int height) {
+    // 删除现有的FBO和纹理
+    if (sceneFBO) {
+        glDeleteFramebuffers(1, &sceneFBO);
+        glDeleteTextures(1, &sceneColorTex);
+        glDeleteRenderbuffers(1, &sceneDepthRBO);
+    }
+    if (radianceFBO) {
+        glDeleteFramebuffers(1, &radianceFBO);
+        glDeleteTextures(1, &radianceTex);
+    }
+    if (blockMapFBO) {
+        glDeleteFramebuffers(1, &blockMapFBO);
+        glDeleteTextures(1, &blockMapTex);
+    }
+    if (postprocessingFBO_GI) {
+        glDeleteFramebuffers(1, &postprocessingFBO_GI);
+        glDeleteTextures(1, &postprocessingTex_GI);
+    }
+    if (blurFBO[0]) {
+        glDeleteFramebuffers(2, blurFBO);
+        glDeleteTextures(2, blurTex);
+    }
+
+    // 重新创建所有FBO和纹理，使用新的分辨率
+    // Scene FBO
+    glGenFramebuffers(1, &sceneFBO);
+    glBindFramebuffer(GL_FRAMEBUFFER, sceneFBO);
+
+    glGenTextures(1, &sceneColorTex);
+    glBindTexture(GL_TEXTURE_2D, sceneColorTex);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, sceneColorTex, 0);
+
+    glGenRenderbuffers(1, &sceneDepthRBO);
+    glBindRenderbuffer(GL_RENDERBUFFER, sceneDepthRBO);
+#ifdef USE_GLES2
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, width, height);
+#else
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width, height);
+#endif
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, sceneDepthRBO);
+
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+        std::cerr << "Scene FBO not complete!" << std::endl;
+    }
+
+    // Blur FBO
+    for (int i = 0; i < 2; ++i) {
+        glGenFramebuffers(1, &blurFBO[i]);
+        glBindFramebuffer(GL_FRAMEBUFFER, blurFBO[i]);
+
+        glGenTextures(1, &blurTex[i]);
+        glBindTexture(GL_TEXTURE_2D, blurTex[i]);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, blurTex[i], 0);
+
+        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+            std::cerr << "Blur FBO " << i << " not complete!" << std::endl;
+        }
+    }
+
+    // Radiance FBO
+    glGenFramebuffers(1, &radianceFBO);
+    glBindFramebuffer(GL_FRAMEBUFFER, radianceFBO);
+
+    glGenTextures(1, &radianceTex);
+    glBindTexture(GL_TEXTURE_2D, radianceTex);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, radianceTex, 0);
+
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+        std::cerr << "Radiance FBO not complete!" << std::endl;
+    }
+
+    // BlockMap FBO
+    glGenFramebuffers(1, &blockMapFBO);
+    glBindFramebuffer(GL_FRAMEBUFFER, blockMapFBO);
+    glGenTextures(1, &blockMapTex);
+    glBindTexture(GL_TEXTURE_2D, blockMapTex);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, blockMapTex, 0);
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+        std::cerr << "BlockMap FBO not complete!" << std::endl;
+    }
+
+    // PostProcessing FBO
+    glGenFramebuffers(1, &postprocessingFBO_GI);
+    glBindFramebuffer(GL_FRAMEBUFFER, postprocessingFBO_GI);
+    glGenTextures(1, &postprocessingTex_GI);
+    glBindTexture(GL_TEXTURE_2D, postprocessingTex_GI);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, postprocessingTex_GI, 0);
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+        std::cerr << "ppgi FBO not complete!" << std::endl;
+    }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    std::cout << "FBOs reinitialized for resolution: " << width << "x" << height << std::endl;
 }
 
 void Renderer::render(const float mvp[16], const float model[16]) {
@@ -855,7 +971,7 @@ void Core::Renderer::renderPanel(const float vp[16], const float model[16])
 
 void Renderer::renderEmissiveToRadianceFBO(const float vp[16], const std::vector<Instance*>& instances) {
     glBindFramebuffer(GL_FRAMEBUFFER, radianceFBO);
-    glViewport(0, 0, 800, 600);
+    glViewport(0, 0, screenWidth, screenHeight);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     //glDisable(GL_DEPTH_TEST); 
 
@@ -880,7 +996,7 @@ void Renderer::renderEmissiveToRadianceFBO(const float vp[16], const std::vector
 
 void Renderer::renderBlockMap(const float vp[16], const std::vector<Instance*>& instances) {
     glBindFramebuffer(GL_FRAMEBUFFER, blockMapFBO);
-    glViewport(0, 0, 800, 600);
+    glViewport(0, 0, screenWidth, screenHeight);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glUseProgram(blockMapShaderProgram);
 
@@ -902,7 +1018,7 @@ void Core::Renderer::renderDiffuseFBO(const float vp[16], const std::vector<Inst
 
     // 1) 绑定 FBO & 清屏
     glBindFramebuffer(GL_FRAMEBUFFER, blurFBO[0]);
-    glViewport(0, 0, 800, 600);
+    glViewport(0, 0, screenWidth, screenHeight);
     glClear(GL_COLOR_BUFFER_BIT);
 
     // 2) 用扩散 Shader
@@ -925,7 +1041,7 @@ void Core::Renderer::renderDiffuseFBO(const float vp[16], const std::vector<Inst
     glUniform1i(glGetUniformLocation(radianceDiffuseShaderProgram, "blockMapTex"), 1);
 
     glUniform2f(glGetUniformLocation(radianceDiffuseShaderProgram, "texelSize"),
-                1.0f/800.0f, 1.0f/600.0f);
+                1.0f/(float)screenWidth, 1.0f/(float)screenHeight);
 
 #ifndef USE_GLES2
     // 只在桌面版设置复杂衰减参数
@@ -997,7 +1113,7 @@ void Core::Renderer::renderDiffuseFBO(const float vp[16], const std::vector<Inst
 
     // 2) 绑定 FBO & 清屏
     glBindFramebuffer(GL_FRAMEBUFFER, blurFBO[0]);
-    glViewport(0, 0, 800, 600);
+    glViewport(0, 0, screenWidth, screenHeight);
     glClear(GL_COLOR_BUFFER_BIT);
 
     // 3) 用SDF扩散 Shader
@@ -1020,7 +1136,7 @@ void Core::Renderer::renderDiffuseFBO(const float vp[16], const std::vector<Inst
         glUniform2f(loc_playerScreenPos, playerScreenUV[0], playerScreenUV[1]);
     }
     if (loc_texelSize != -1) {
-        glUniform2f(loc_texelSize, 1.0f/800.0f, 1.0f/600.0f);
+        glUniform2f(loc_texelSize, 1.0f/(float)screenWidth, 1.0f/(float)screenHeight);
     }
     if (loc_lightRange != -1) {
         // 极大幅缩小光照范围，让效果更加微妙和局部化
@@ -1072,7 +1188,7 @@ void Core::Renderer::bindQuadVertexAttributes() {
 void Core::Renderer::renderStaticInstances(const float vp[16], const std::vector<Core::Instance*>& instances) {
     // 渲染到场景FBO
     glBindFramebuffer(GL_FRAMEBUFFER, sceneFBO);
-    glViewport(0, 0, 800, 600);
+    glViewport(0, 0, screenWidth, screenHeight);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
     glUseProgram(shaderProgram);
@@ -1085,6 +1201,9 @@ void Core::Renderer::renderStaticInstances(const float vp[16], const std::vector
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, radianceTex);
     glUniform1i(loc_radianceTex, 0);
+    
+    // 设置屏幕尺寸
+    glUniform2f(loc_screenSize, (float)screenWidth, (float)screenHeight);
     
     for (const auto& inst : instances) {
         float mvp[16];
@@ -1108,7 +1227,7 @@ void Core::Renderer::renderStaticInstances(const float vp[16], const std::vector
 void Core::Renderer::renderDynamicInstances(const float vp[16], const std::vector<Core::Instance*>& instances) {
     // 渲染到场景FBO（不清空，在静态对象之上叠加动态对象）
     glBindFramebuffer(GL_FRAMEBUFFER, sceneFBO);
-    glViewport(0, 0, 800, 600);
+    glViewport(0, 0, screenWidth, screenHeight);
     // 不清空缓冲区，继续在sceneFBO上绘制
     
     glUseProgram(shaderProgram);
@@ -1121,6 +1240,9 @@ void Core::Renderer::renderDynamicInstances(const float vp[16], const std::vecto
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, radianceTex);
     glUniform1i(loc_radianceTex, 0);
+    
+    // 设置屏幕尺寸
+    glUniform2f(loc_screenSize, (float)screenWidth, (float)screenHeight);
     
     for (const auto& inst : instances) {
         float mvp[16];
@@ -1143,7 +1265,7 @@ void Core::Renderer::renderDynamicInstances(const float vp[16], const std::vecto
 
 void Core::Renderer::renderPPGI() {
     glBindFramebuffer(GL_FRAMEBUFFER, postprocessingFBO_GI);
-    glViewport(0, 0, 800, 600);
+    glViewport(0, 0, screenWidth, screenHeight);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glUseProgram(ppgiShaderProgram);
 
@@ -1173,7 +1295,7 @@ void Core::Renderer::renderPPGI() {
 void Core::Renderer::OneFrameRenderFinish(bool usePostProcessing) {
     // 将最终结果渲染到屏幕
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glViewport(0, 0, 800, 600);
+    glViewport(0, 0, screenWidth, screenHeight);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
     glUseProgram(quadShaderProgram);
