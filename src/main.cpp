@@ -238,7 +238,7 @@ int main() {
         //renderer.render(camera.vp, models);
         // 1. 渲染自发光到radianceFBO
         renderer.renderEmissiveToRadianceFBO(camera.vp, DynamicInstances);
-        //renderer.renderBlockMap(camera.vp, BlockInstances);
+        renderer.renderBlockMap(camera.vp, BlockInstances);
         // 2. radiance扩散（radianceFBO -> blurFBO[0]）
         renderer.renderDiffuseFBO(camera.vp, DynamicInstances);
         renderer.renderStaticInstances(camera.vp, StaticInstances);

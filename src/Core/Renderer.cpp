@@ -217,9 +217,9 @@ uniform sampler2D blockMapTex;
 uniform vec2    texelSize;
 
 const int   STEPS1 = 16;
-const float DECAY1 = 0.98;
-const int   STEPS2 = 16;
-const float DECAY2 = 0.98;
+const float DECAY1 = 0.9;
+const int   STEPS2 = 48;
+const float DECAY2 = 0.9;
 
 // π 常量
 const float PI = 3.141592653589793;
@@ -236,7 +236,7 @@ void main(){
     
     // —— 第一级：4 条对角线（45°,135°,225°,315°） ——
     float w = 1.0;
-    for(int i=1; i<=STEPS1; ++i){
+    for(int i=1; i<=STEPS1; i+=2){
         w *= DECAY1;
         float dist = float(i);
         for(int d=0; d<4; ++d){
@@ -263,15 +263,15 @@ void main(){
 
     float startDist = max(maxD1, float(STEPS1));
     bool  done2[8] = bool[8](false,false,false,false,false,false,false,false);
-    w = 1.0;
+    //w = 1.0;
 
-    //—— 第二级：8 条径向（0°,45°,90°……315°） ——
-    for(int i=int(startDist)+1; i<=STEPS2; ++i){
+    // //—— 第二级：8 条径向（0°,45°,90°……315°） ——
+    for(int i=int(startDist)+1; i<=STEPS2; i+=4){
         w *= DECAY2;
         float dist = float(i);
         for(int d=0; d<8; ++d){
             if(done2[d]) continue;
-            float angle = rad(float(d) * 45.0);  // 360/8 = 45°
+            float angle = rad(22.5+float(d) * 45.0);  // 360/8 = 45°
             vec2 dir   = vec2(cos(angle), sin(angle));
             vec2 uv    = TexCoord + dir * texelSize * dist;
             if(uv.x<0.||uv.x>1.||uv.y<0.||uv.y>1. ||
@@ -281,7 +281,7 @@ void main(){
             }
             vec3 col = texture(radianceTex,uv).rgb;
             if(length(col)>0.01){
-                accum   += w * col * 0.5;
+                accum   += w * col;
                 done2[d] = true;
             }
         }
@@ -433,7 +433,7 @@ bool Renderer::compileShaders() {
         // 检查编译...
 
         unsigned int dfs = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(dfs, 1, &radianceDiffuseFragmentShaderSrc, nullptr);
+        glShaderSource(dfs, 1, &radianceDiffuseCascadeFragmentShaderSrc, nullptr);
         glCompileShader(dfs);
         // 检查编译...
 
@@ -685,30 +685,43 @@ void Renderer::renderBlockMap(const float vp[16], const std::vector<Instance*>& 
 
 void Core::Renderer::renderDiffuseFBO(const float vp[16], const std::vector<Instance *> &instances)
 {
-    // 1. 绑定 ping-pong FBO
+    std::cout << "Rendering diffuse FBO..." << std::endl;
+    while (glGetError() != GL_NO_ERROR);
+
+    // 1) 绑定 FBO & 清屏
     glBindFramebuffer(GL_FRAMEBUFFER, blurFBO[0]);
     glViewport(0, 0, 800, 600);
     glClear(GL_COLOR_BUFFER_BIT);
 
-
-    // 2. 用扩散shader
+    // 2) 用扩散 Shader
     glUseProgram(radianceDiffuseShaderProgram);
 
-    GLenum err = glGetError();
-    if (err != GL_NO_ERROR) std::cerr << "VAO bind error: " << err << std::endl;
+    // 3) 绑定 Quad VAO
+    glBindVertexArray(quadVAO);
+
+    // 4) 绑定纹理 & 设置 uniform
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, radianceTex);
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, blockMapTex); // 绑定blockMap贴图
     glUniform1i(glGetUniformLocation(radianceDiffuseShaderProgram, "radianceTex"), 0);
-    glUniform1i(glGetUniformLocation(radianceDiffuseShaderProgram, "blockMapTex"), 1);
-    glUniform2f(glGetUniformLocation(radianceDiffuseShaderProgram, "texelSize"), 1.0f/800.0f, 1.0f/600.0f);
 
-    // 3. 绘制全屏quad
-    glBindVertexArray(quadVAO);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, blockMapTex);
+    glUniform1i(glGetUniformLocation(radianceDiffuseShaderProgram, "blockMapTex"), 1);
+
+    glUniform2f(glGetUniformLocation(radianceDiffuseShaderProgram, "texelSize"),
+                1.0f/800.0f, 1.0f/600.0f);
+
+    // 5) 绘制 Quad
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
+    // 6) 恢复默认 FBO
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    // 7) 检查错误
+    GLenum err = glGetError();
+    if (err != GL_NO_ERROR)
+        std::cerr << "renderDiffuseFBO error: 0x" 
+                  << std::hex << err << std::dec << std::endl;
 }
 
 void Core::Renderer::renderPPGI()
@@ -740,6 +753,7 @@ void Renderer::shutdown() {
 }
 void Renderer::renderStaticInstances(const float vp[16], const std::vector<Instance*>& instances) {
 
+    std::cout << "Rendering static instances..." << std::endl;
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, blurTex[0]); // 扩散后的radiance贴图
     glUniform1i(glGetUniformLocation(shaderProgram, "radianceTex"), 1);
