@@ -1,3 +1,0 @@
-E:/Course_USTC/QRS_Render/build/CMakeFiles/WinSDLGLTest.dir
-E:/Course_USTC/QRS_Render/build/CMakeFiles/ALL_BUILD.dir
-E:/Course_USTC/QRS_Render/build/CMakeFiles/ZERO_CHECK.dir

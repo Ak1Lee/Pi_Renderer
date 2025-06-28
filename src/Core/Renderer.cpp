@@ -216,83 +216,111 @@ uniform sampler2D radianceTex;
 uniform sampler2D blockMapTex;
 uniform vec2    texelSize;
 
-const int   STEPS1 = 16;
-const float DECAY1 = 0.9;
-const int   STEPS2 = 48;
-const float DECAY2 = 0.9;
+uniform float att_c;  // 通常取 1.0
+uniform float att_l;  // 0.7 ~ 1.8
+uniform float att_q;  // 1.8 ~ 2.5
 
-// π 常量
-const float PI = 3.141592653589793;
+const int   STEPS1      = 16;
+const float DECAY1      = 0.95;
+const int   STEPS2      = 16;
+const float DECAY2      = 0.90;
+const float SPLIT_ANGLE = 22.5;        // 子射线偏转角度
+const float PI          = 3.141592653589793;
 
-// 把角度转弧度
+// 预先定义的四个对角线角度
+const float baseAngles[4] = float[4](45.0, 135.0, 225.0, 315.0);
+
+// 角度转弧度
 float rad(float deg) {
     return deg * PI / 180.0;
 }
 
 void main(){
     vec3 accum = vec3(0.0);
-    bool   done1[4] = bool[4](false,false,false,false);
-    float  maxD1    = 0.0;
+    if(texture(blockMapTex, TexCoord).r > 0.5)
+    {
+        FragColor = vec4(accum, 1.0);
+        return;
+    }
     
-    // —— 第一级：4 条对角线（45°,135°,225°,315°） ——
-    float w = 1.0;
-    for(int i=1; i<=STEPS1; i+=2){
-        w *= DECAY1;
+
+    // 第一级命中标记与距离
+    bool  hit1[4]    = bool[4](false, false, false, false);
+    float hitDist[4] = float[4](0.0,  0.0,   0.0,   0.0);
+
+    // —— 第一级对角线采样 —— 
+    float w1 = 1.0;
+    for(int i = 1; i <= STEPS1; ++i){
+        //w1 *= DECAY1;
         float dist = float(i);
-        for(int d=0; d<4; ++d){
-            if(done1[d]) continue;
-            // 计算角度：起始 45°，每次 +90°
-            float angle = rad(45.0 + float(d)*90.0);
-            vec2 dir   = vec2(cos(angle), sin(angle));
-            vec2 uv    = TexCoord + dir * texelSize * dist;
-            // 越界或遮挡
-            if(uv.x<0.||uv.x>1.||uv.y<0.||uv.y>1. ||
-               texture(blockMapTex,uv).r>0.5) {
-                done1[d] = true; 
+        for(int d = 0; d < 4; ++d){
+            if(hit1[d]) continue;
+            float ang = rad(baseAngles[d]);
+            vec2 dir = vec2(cos(ang), sin(ang));
+            vec2 uv  = TexCoord + dir * texelSize * dist;
+
+            // 出屏或阻挡
+            if(uv.x < 0.0 || uv.x > 1.0 ||
+               uv.y < 0.0 || uv.y > 1.0 ||
+               texture(blockMapTex, uv).r > 0.5) {
+                hit1[d]    = true;
+                hitDist[d] = dist;
                 continue;
             }
-            vec3 col = texture(radianceTex,uv).rgb;
-            if(length(col)>0.01){
-                accum   += w * col * 0.5;
-                done1[d] = true;
-                maxD1    = max(maxD1, dist);
+            vec3 col = texture(radianceTex, uv).rgb;
+            if(length(col) > 0.01) {
+                float att = 1.0/(att_c + att_l*dist + att_q*dist*dist);
+                accum      += w1 * col * att;
+                hit1[d]     = true;
+                hitDist[d]  = dist;
             }
         }
-        if(done1[0]&&done1[1]&&done1[2]&&done1[3]) break;
+    }
+    for (int d = 0; d < 4; ++d) {
+        //hit1[d] = true;
+        hitDist[d] = 12.0; // 模拟第一级命中
     }
 
-    float startDist = max(maxD1, float(STEPS1));
-    bool  done2[8] = bool[8](false,false,false,false,false,false,false,false);
-    //w = 1.0;
 
-    // //—— 第二级：8 条径向（0°,45°,90°……315°） ——
-    for(int i=int(startDist)+1; i<=STEPS2; i+=4){
-        w *= DECAY2;
-        float dist = float(i);
-        for(int d=0; d<8; ++d){
-            if(done2[d]) continue;
-            float angle = rad(22.5+float(d) * 45.0);  // 360/8 = 45°
-            vec2 dir   = vec2(cos(angle), sin(angle));
-            vec2 uv    = TexCoord + dir * texelSize * dist;
-            if(uv.x<0.||uv.x>1.||uv.y<0.||uv.y>1. ||
-               texture(blockMapTex,uv).r>0.5) {
-                done2[d] = true;
-                continue;
-            }
-            vec3 col = texture(radianceTex,uv).rgb;
-            if(length(col)>0.01){
-                accum   += w * col;
-                done2[d] = true;
+    // —— 第二级：在每个命中方向上分叉两条子射线 —— 
+    for(int d = 0; d < 4; ++d) {
+        //if(hit1[d]) continue;  // 只有真正命中一级才分叉
+        float baseAng = baseAngles[d];
+
+        for(int sgn = -1; sgn <= 1; sgn += 2) {
+            float childAng = baseAng + float(sgn)*SPLIT_ANGLE;
+            vec2 dir = vec2(cos(rad(childAng)), sin(rad(childAng)));
+
+            float w2 = 0.5;
+            int startI = int(hitDist[d]) + 1;
+            int endI   = startI + STEPS2;
+            for(int i = startI; i <= endI; ++i) {
+                float dist = float(i);
+                // 计算屏幕步进
+                float stepSize = mix(1.0, 3.0, dist/float(endI)); 
+                vec2 uv = TexCoord + dir * texelSize * dist * stepSize;
+                // 出界或被阻挡，才停止
+                if(uv.x<0.||uv.x>1.||uv.y<0.||uv.y>1. ||
+                texture(blockMapTex,uv).r>0.5) {
+                    break;
+                }
+
+                vec3 col = texture(radianceTex,uv).rgb;
+                if(length(col) > 0.01) {
+                    float att = 1.0/(att_c + att_l*dist + att_q*dist*dist);
+                    accum += w2 * col * att;
+                    // **不再 break**，让它再往后采，给你一道“光尾”
+                    break;
+                }
+                
             }
         }
-        bool all2 = true;
-        for(int d=0; d<8; ++d) all2 = all2 && done2[d];
-        if(all2) break;
     }
 
-    FragColor = vec4(accum,1.0);
+    FragColor = vec4(accum, 1.0);
 }
 )";
+
 
 const char* ppgiVertexShaderSrc = R"(
 #version 300 es
@@ -711,6 +739,17 @@ void Core::Renderer::renderDiffuseFBO(const float vp[16], const std::vector<Inst
     glUniform2f(glGetUniformLocation(radianceDiffuseShaderProgram, "texelSize"),
                 1.0f/800.0f, 1.0f/600.0f);
 
+    GLint loc_c  = glGetUniformLocation(radianceDiffuseShaderProgram, "att_c");
+    GLint loc_l  = glGetUniformLocation(radianceDiffuseShaderProgram, "att_l");
+    GLint loc_q  = glGetUniformLocation(radianceDiffuseShaderProgram, "att_q");
+
+    float kc = 0.5f;   // 常数衰减
+    float kl = 0.2f;   // 线性衰减
+    float kq = 0.00f;   // 二次衰减
+    glUniform1f(loc_c, kc);
+    glUniform1f(loc_l, kl);
+    glUniform1f(loc_q, kq);
+
     // 5) 绘制 Quad
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
@@ -817,7 +856,7 @@ void Core::Renderer::OneFrameRenderFinish()
     // glBindTexture(GL_TEXTURE_2D, blurTex[0]);
     glBindTexture(GL_TEXTURE_2D, sceneColorTex);
     //glBindTexture(GL_TEXTURE_2D, radianceTex);
-    // glBindTexture(GL_TEXTURE_2D, postprocessingTex_GI);
+    glBindTexture(GL_TEXTURE_2D, postprocessingTex_GI);
     //glBindTexture(GL_TEXTURE_2D, blockMapTex); // 如果需要显示radiance贴图
 
 

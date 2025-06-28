@@ -122,7 +122,7 @@ int main() {
     std::vector<Core::Instance*> BlockInstances;
 
     Core::Instance* instance = new Core::PanelInstance(&panelMesh);
-    float pos[3] = {mazeHeight/2.f, mazeWidth/2.f, 0.0f};
+    float pos[3] = {mazeHeight/2.f, mazeWidth/2.f, -3.0f};
     float rot[3] = {0, 3.14f/2, 0}; // 只绕Y轴旋转
     float scale[3] = {20, 20, 20}; 
     createModelMatrix1(PanelModel, pos, rot, scale);
