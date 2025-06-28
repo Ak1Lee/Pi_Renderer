@@ -27,6 +27,11 @@ public:
     void setEmissive(float r, float g, float b, float a = 1.0f) {
         emissive[0] = r; emissive[1] = g; emissive[2] = b; emissive[3] = a;
     }
+    
+    // 添加getter方法
+    const float* getModelMatrix() const { return modelMatrix; }
+    const float* getColor() const { return color; }
+    const float* getEmissive() const { return emissive; }
 };
 class CubeInstance : public Instance {
 public:

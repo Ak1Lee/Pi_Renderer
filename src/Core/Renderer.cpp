@@ -49,9 +49,11 @@ void main() {
 
     vec2 uv = gl_FragCoord.xy / vec2(800,600);
 
-    fragColor = vec4(diffuse, u_color.a);
-
-    vec3 color = diffuse + emissive;
+    // 降低环境光，为GI效果留出空间
+    vec3 ambient = vec3(0.05, 0.05, 0.08);
+    // 降低基础漫反射强度
+    vec3 color = diffuse * 0.6 + emissive + ambient;
+    
     vec3 radiance = texture(radianceTex, uv).rgb;
     color += radiance; // 叠加全局光照
     fragColor = vec4(color, u_color.a);
@@ -350,7 +352,142 @@ void main() {
 }
 )";
 
+// 简化版高性能GI着色器
+const char* simpleGIFragmentShaderSrc = R"(
+#version 300 es
+precision mediump float;
 
+in vec2 TexCoord;
+out vec4 FragColor;
+
+uniform sampler2D radianceTex;
+uniform sampler2D blockMapTex;
+uniform vec2 texelSize;
+
+void main() {
+    vec3 accum = vec3(0.0);
+    
+    // 检查当前像素是否被阻挡
+    if(texture(blockMapTex, TexCoord).r > 0.5) {
+        FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+        return;
+    }
+    
+    // 简化版：只使用4个主要方向，每个方向只采样4步
+    vec2 dirs[4] = vec2[4](
+        vec2(1.0, 0.0),   // 右
+        vec2(0.0, 1.0),   // 上  
+        vec2(-1.0, 0.0),  // 左
+        vec2(0.0, -1.0)   // 下
+    );
+    
+    const int MAX_STEPS = 4;
+    const float STEP_SIZE = 2.0;
+    
+    for(int d = 0; d < 4; d++) {
+        for(int i = 1; i <= MAX_STEPS; i++) {
+            vec2 samplePos = TexCoord + dirs[d] * texelSize * float(i) * STEP_SIZE;
+            
+            // 边界检查
+            if(samplePos.x < 0.0 || samplePos.x > 1.0 || 
+               samplePos.y < 0.0 || samplePos.y > 1.0) {
+                break;
+            }
+            
+            // 阻挡检查
+            if(texture(blockMapTex, samplePos).r > 0.5) {
+                break;
+            }
+            
+            // 采样radiance
+            vec3 radiance = texture(radianceTex, samplePos).rgb;
+            if(length(radiance) > 0.01) {
+                float falloff = 1.0 / (1.0 + float(i) * 0.5);
+                accum += radiance * falloff * 0.25; // 每个方向贡献25%
+                break; // 找到光源就停止这个方向的采样
+            }
+        }
+    }
+    
+    FragColor = vec4(accum, 1.0);
+}
+)";
+
+// 简化的SDF GI着色器 - 使用预计算的屏幕坐标
+const char* sdfGIFragmentShaderSrc = R"(
+#version 300 es
+precision mediump float;
+
+in vec2 TexCoord;
+out vec4 FragColor;
+
+uniform sampler2D blockMapTex;
+uniform vec2 texelSize;
+uniform vec2 u_playerScreenPos;    // 预计算的玩家屏幕坐标
+uniform float u_lightRange;       // 光照范围（屏幕空间）
+
+void main() {
+    // 检查当前像素是否在墙壁中
+    if (texture(blockMapTex, TexCoord).r > 0.5) {
+        FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+        return;
+    }
+    
+    // 计算到玩家的屏幕空间距离
+    vec2 toPlayer = u_playerScreenPos - TexCoord;
+    float screenDistance = length(toPlayer);
+    
+    // 如果玩家不在屏幕内或距离太远，则不产生光照
+    if (u_playerScreenPos.x < 0.0 || u_playerScreenPos.x > 1.0 || 
+        u_playerScreenPos.y < 0.0 || u_playerScreenPos.y > 1.0 ||
+        screenDistance > u_lightRange) {
+        FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+        return;
+    }
+    
+    // 使用光线步进进行遮挡检测 - 减少步数提高性能
+    vec2 lightDirection = normalize(toPlayer);
+    vec2 currentPos = TexCoord;
+    const int maxSteps = 16; // 减少从32到16
+    float stepSize = screenDistance / float(maxSteps);
+    bool occluded = false;
+    
+    for(int i = 1; i < maxSteps; i++) {
+        currentPos += lightDirection * stepSize;
+        
+        // 检查是否到达光源位置
+        if(length(currentPos - u_playerScreenPos) < stepSize * 2.0) {
+            break;
+        }
+        
+        // 检查是否被阻挡
+        if(currentPos.x < 0.0 || currentPos.x > 1.0 || 
+           currentPos.y < 0.0 || currentPos.y > 1.0 ||
+           texture(blockMapTex, currentPos).r > 0.5) {
+            occluded = true;
+            break;
+        }
+    }
+    
+    if (occluded) {
+        FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+        return;
+    }
+    
+    // 计算光照衰减（基于屏幕距离） - 更平滑的衰减
+    float attenuation = 1.0 - (screenDistance / u_lightRange);
+    attenuation = smoothstep(0.0, 1.0, attenuation); // 使用smoothstep让衰减更平滑
+    attenuation = attenuation * attenuation; // 二次衰减，让光照更集中
+    
+    // 适度的光照强度，让玩家能够看清周围
+    vec3 lightColor = vec3(1.2, 0.6, 0.3) * attenuation; // 稍微提高一点让区分更明显
+    
+    // 极低的环境光，营造黑暗氛围
+    vec3 ambient = vec3(0.005, 0.005, 0.01); // 极低的环境光，几乎全黑
+    
+    FragColor = vec4(lightColor + ambient, 1.0);
+}
+)";
 
 
 bool Renderer::compileShaders() {
@@ -461,15 +598,40 @@ bool Renderer::compileShaders() {
         // 检查编译...
 
         unsigned int dfs = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(dfs, 1, &radianceDiffuseCascadeFragmentShaderSrc, nullptr);
+        
+        // 强制使用SDF GI shader进行测试
+        glShaderSource(dfs, 1, &sdfGIFragmentShaderSrc, nullptr);
+        std::cout << "Using SDF GI shader for testing" << std::endl;
+        
         glCompileShader(dfs);
-        // 检查编译...
+        
+        // 检查编译错误
+        int ok;
+        glGetShaderiv(dfs, GL_COMPILE_STATUS, &ok);
+        if (!ok) {
+            char buf[512];
+            glGetShaderInfoLog(dfs, 512, nullptr, buf);
+            std::cerr << "Diffuse FS error: " << buf << std::endl;
+        }
 
         radianceDiffuseShaderProgram = glCreateProgram();
         glAttachShader(radianceDiffuseShaderProgram, dvs);
         glAttachShader(radianceDiffuseShaderProgram, dfs);
         glLinkProgram(radianceDiffuseShaderProgram);
-        // 检查链接...
+        
+        // 检查链接状态
+        int linkOk;
+        glGetProgramiv(radianceDiffuseShaderProgram, GL_LINK_STATUS, &linkOk);
+        if (!linkOk) {
+            char buf[512];
+            glGetProgramInfoLog(radianceDiffuseShaderProgram, 512, nullptr, buf);
+            std::cerr << "Radiance Diffuse Shader link error: " << buf << std::endl;
+        }
+        
+        // 缓存SDF GI相关的uniform位置
+        loc_playerScreenPos = glGetUniformLocation(radianceDiffuseShaderProgram, "u_playerScreenPos");
+        loc_texelSize = glGetUniformLocation(radianceDiffuseShaderProgram, "texelSize");
+        loc_lightRange = glGetUniformLocation(radianceDiffuseShaderProgram, "u_lightRange");
 
         glDeleteShader(dvs);
         glDeleteShader(dfs);
@@ -499,7 +661,17 @@ bool Renderer::compileShaders() {
 bool Renderer::init() {
     if (!compileShaders()) return false;
 
+    // Cache uniform locations for performance
+    loc_mvpMatrix = glGetUniformLocation(shaderProgram, "u_mvpMatrix");
+    loc_modelMatrix = glGetUniformLocation(shaderProgram, "u_modelMatrix");
+    loc_color = glGetUniformLocation(shaderProgram, "u_color");
+    loc_emissive = glGetUniformLocation(shaderProgram, "u_emissive");
+    loc_lightDir = glGetUniformLocation(shaderProgram, "u_lightDir");
+    loc_radianceTex = glGetUniformLocation(shaderProgram, "radianceTex");
     
+    // 缓存SDF GI相关的uniform位置 - 注意这里应该等radianceDiffuseShaderProgram创建后再设置
+    // 暂时先注释掉，稍后在radianceDiffuseShaderProgram创建后设置
+
     glEnable(GL_DEPTH_TEST);
 
     //FBO
@@ -515,7 +687,11 @@ bool Renderer::init() {
 
     glGenRenderbuffers(1, &sceneDepthRBO);
     glBindRenderbuffer(GL_RENDERBUFFER, sceneDepthRBO);
+#ifdef USE_GLES2
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, 800, 600);
+#else
     glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 800, 600);
+#endif
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, sceneDepthRBO);
 
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
@@ -533,6 +709,13 @@ bool Renderer::init() {
         1.0f, -1.0f,  1.0f, 0.0f,
         1.0f,  1.0f,  1.0f, 1.0f
     };
+#ifdef USE_GLES2
+    // GLES2 doesn't have VAO, just create VBO
+    glGenBuffers(1, &quadVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), quadVertices, GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+#else
     glGenVertexArrays(1, &quadVAO);
     glGenBuffers(1, &quadVBO);
     glBindVertexArray(quadVAO);
@@ -543,6 +726,7 @@ bool Renderer::init() {
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
     glBindVertexArray(0);
+#endif
 
 
     // Blur FBO
@@ -675,13 +859,12 @@ void Renderer::renderEmissiveToRadianceFBO(const float vp[16], const std::vector
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     //glDisable(GL_DEPTH_TEST); 
 
+    std::cout << "Rendering " << instances.size() << " emissive instances" << std::endl;
 
     glUseProgram(radianceShaderProgram);
 
     GLint locMVP = glGetUniformLocation(radianceShaderProgram, "u_mvpMatrix");
     GLint locEmissive = glGetUniformLocation(radianceShaderProgram, "u_emissive");
-
-
 
     //glBindVertexArray(vao);
     for (const auto& inst : instances) {
@@ -689,6 +872,7 @@ void Renderer::renderEmissiveToRadianceFBO(const float vp[16], const std::vector
         multiplyMatrices(vp, inst->modelMatrix, mvp);
         glUniformMatrix4fv(glGetUniformLocation(radianceShaderProgram, "u_mvpMatrix"), 1, GL_FALSE, mvp);
         glUniform4fv(glGetUniformLocation(radianceShaderProgram, "u_emissive"), 1, inst->emissive);
+        std::cout << "Emissive: " << inst->emissive[0] << ", " << inst->emissive[1] << ", " << inst->emissive[2] << ", " << inst->emissive[3] << std::endl;
         inst->mesh->draw();
     }
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -713,7 +897,7 @@ void Renderer::renderBlockMap(const float vp[16], const std::vector<Instance*>& 
 
 void Core::Renderer::renderDiffuseFBO(const float vp[16], const std::vector<Instance *> &instances)
 {
-    std::cout << "Rendering diffuse FBO..." << std::endl;
+    // std::cout << "Rendering diffuse FBO..." << std::endl; // 移除调试输出
     while (glGetError() != GL_NO_ERROR);
 
     // 1) 绑定 FBO & 清屏
@@ -725,7 +909,11 @@ void Core::Renderer::renderDiffuseFBO(const float vp[16], const std::vector<Inst
     glUseProgram(radianceDiffuseShaderProgram);
 
     // 3) 绑定 Quad VAO
+#ifdef USE_GLES2
+    bindQuadVertexAttributes();
+#else
     glBindVertexArray(quadVAO);
+#endif
 
     // 4) 绑定纹理 & 设置 uniform
     glActiveTexture(GL_TEXTURE0);
@@ -739,6 +927,8 @@ void Core::Renderer::renderDiffuseFBO(const float vp[16], const std::vector<Inst
     glUniform2f(glGetUniformLocation(radianceDiffuseShaderProgram, "texelSize"),
                 1.0f/800.0f, 1.0f/600.0f);
 
+#ifndef USE_GLES2
+    // 只在桌面版设置复杂衰减参数
     GLint loc_c  = glGetUniformLocation(radianceDiffuseShaderProgram, "att_c");
     GLint loc_l  = glGetUniformLocation(radianceDiffuseShaderProgram, "att_l");
     GLint loc_q  = glGetUniformLocation(radianceDiffuseShaderProgram, "att_q");
@@ -749,6 +939,7 @@ void Core::Renderer::renderDiffuseFBO(const float vp[16], const std::vector<Inst
     glUniform1f(loc_c, kc);
     glUniform1f(loc_l, kl);
     glUniform1f(loc_q, kq);
+#endif
 
     // 5) 绘制 Quad
     glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -763,105 +954,275 @@ void Core::Renderer::renderDiffuseFBO(const float vp[16], const std::vector<Inst
                   << std::hex << err << std::dec << std::endl;
 }
 
-void Core::Renderer::renderPPGI()
+// SDF GI版本的renderDiffuseFBO函数 - 使用简化的坐标转换
+void Core::Renderer::renderDiffuseFBO(const float vp[16], const std::vector<Instance *> &instances,
+                                     const float playerWorldPos[3], const float viewProjectionMatrix[16])
 {
+    while (glGetError() != GL_NO_ERROR);
+
+    // 1) 使用简化的坐标转换方法：直接从MVP矩阵获取变换后位置
+    float playerModel[16];
+    float playerMVP[16];
+    
+    // 创建玩家的模型矩阵（只有位移，无旋转缩放）
+    for (int i = 0; i < 16; i++) playerModel[i] = 0.0f;
+    playerModel[0] = playerModel[5] = playerModel[10] = playerModel[15] = 1.0f; // 单位矩阵
+    playerModel[12] = playerWorldPos[0]; // X位移
+    playerModel[13] = playerWorldPos[1]; // Y位移
+    playerModel[14] = playerWorldPos[2]; // Z位移
+    
+    // MVP变换
+    multiplyMatrices(viewProjectionMatrix, playerModel, playerMVP);
+    
+    // 直接取MVP矩阵的位移部分（第4列）作为裁剪空间坐标
+    float playerClipSpace[4];
+    for (int i = 0; i < 4; i++) {
+        playerClipSpace[i] = playerMVP[12 + i];
+    }
+    
+    // 透视除法得到NDC坐标
+    float playerNDC[2];
+    if (playerClipSpace[3] != 0.0f) {
+        playerNDC[0] = playerClipSpace[0] / playerClipSpace[3];
+        playerNDC[1] = playerClipSpace[1] / playerClipSpace[3];
+    } else {
+        playerNDC[0] = playerNDC[1] = 0.0f;
+    }
+    
+    // 转换为屏幕UV坐标 [0, 1]
+    float playerScreenUV[2] = {
+        (playerNDC[0] + 1.0f) * 0.5f,
+        (playerNDC[1] + 1.0f) * 0.5f
+    };
+
+    // 2) 绑定 FBO & 清屏
+    glBindFramebuffer(GL_FRAMEBUFFER, blurFBO[0]);
+    glViewport(0, 0, 800, 600);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    // 3) 用SDF扩散 Shader
+    glUseProgram(radianceDiffuseShaderProgram);
+
+    // 4) 绑定 Quad VAO
+#ifdef USE_GLES2
+    bindQuadVertexAttributes();
+#else
+    glBindVertexArray(quadVAO);
+#endif
+
+    // 5) 绑定纹理
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, blockMapTex);
+    glUniform1i(glGetUniformLocation(radianceDiffuseShaderProgram, "blockMapTex"), 0);
+
+    // 6) 设置SDF GI相关的uniform变量
+    if (loc_playerScreenPos != -1) {
+        glUniform2f(loc_playerScreenPos, playerScreenUV[0], playerScreenUV[1]);
+    }
+    if (loc_texelSize != -1) {
+        glUniform2f(loc_texelSize, 1.0f/800.0f, 1.0f/600.0f);
+    }
+    if (loc_lightRange != -1) {
+        // 极大幅缩小光照范围，让效果更加微妙和局部化
+        float lightRange = 0.08f; // 从0.15缩小到0.08，让光照范围更小
+        
+        // 根据玩家位置调整光照范围，实现平滑过渡
+        if (playerScreenUV[0] >= 0.0f && playerScreenUV[0] <= 1.0f && 
+            playerScreenUV[1] >= 0.0f && playerScreenUV[1] <= 1.0f) {
+            // 玩家在屏幕内，使用基础光照范围
+            lightRange = 0.08f;
+        } else {
+            // 玩家在屏幕外，快速衰减光照
+            float distFromScreen = 0.0f;
+            if (playerScreenUV[0] < 0.0f) distFromScreen = std::max(distFromScreen, -playerScreenUV[0]);
+            if (playerScreenUV[0] > 1.0f) distFromScreen = std::max(distFromScreen, playerScreenUV[0] - 1.0f);
+            if (playerScreenUV[1] < 0.0f) distFromScreen = std::max(distFromScreen, -playerScreenUV[1]);
+            if (playerScreenUV[1] > 1.0f) distFromScreen = std::max(distFromScreen, playerScreenUV[1] - 1.0f);
+            
+            // 更快的衰减：距离一点就快速减弱
+            lightRange = 0.08f * std::max(0.0f, 1.0f - distFromScreen * 8.0f); // 增加衰减速度
+        }
+        lightRange = 0.2;
+        glUniform1f(loc_lightRange, lightRange);
+    }
+
+    // 7) 绘制 Quad
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+
+    // 8) 恢复默认 FBO
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    // 9) 检查错误
+    GLenum err = glGetError();
+    if (err != GL_NO_ERROR)
+        std::cerr << "renderDiffuseFBO (SDF GI) error: 0x" 
+                  << std::hex << err << std::dec << std::endl;
+}
+
+#ifdef USE_GLES2
+void Core::Renderer::bindQuadVertexAttributes() {
+    glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+}
+#endif
+
+void Core::Renderer::renderStaticInstances(const float vp[16], const std::vector<Core::Instance*>& instances) {
+    // 渲染到场景FBO
+    glBindFramebuffer(GL_FRAMEBUFFER, sceneFBO);
+    glViewport(0, 0, 800, 600);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    
+    glUseProgram(shaderProgram);
+    
+    // 设置光照方向
+    float lightDir[3] = {-1.0f, -1.0f, -1.0f};
+    glUniform3fv(loc_lightDir, 1, lightDir);
+    
+    // 绑定radiance纹理
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, radianceTex);
+    glUniform1i(loc_radianceTex, 0);
+    
+    for (const auto& inst : instances) {
+        float mvp[16];
+        multiplyMatrices(vp, inst->getModelMatrix(), mvp);
+        
+        glUniformMatrix4fv(loc_mvpMatrix, 1, GL_FALSE, mvp);
+        glUniformMatrix4fv(loc_modelMatrix, 1, GL_FALSE, inst->getModelMatrix());
+        
+        const float* color = inst->getColor();
+        glUniform4fv(loc_color, 1, color);
+        
+        const float* emissive = inst->getEmissive();
+        glUniform4fv(loc_emissive, 1, emissive);
+        
+        inst->mesh->draw();
+    }
+    
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void Core::Renderer::renderDynamicInstances(const float vp[16], const std::vector<Core::Instance*>& instances) {
+    // 渲染到场景FBO（不清空，在静态对象之上叠加动态对象）
+    glBindFramebuffer(GL_FRAMEBUFFER, sceneFBO);
+    glViewport(0, 0, 800, 600);
+    // 不清空缓冲区，继续在sceneFBO上绘制
+    
+    glUseProgram(shaderProgram);
+    
+    // 设置光照方向
+    float lightDir[3] = {-1.0f, -1.0f, -1.0f};
+    glUniform3fv(loc_lightDir, 1, lightDir);
+    
+    // 绑定radiance纹理
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, radianceTex);
+    glUniform1i(loc_radianceTex, 0);
+    
+    for (const auto& inst : instances) {
+        float mvp[16];
+        multiplyMatrices(vp, inst->getModelMatrix(), mvp);
+        
+        glUniformMatrix4fv(loc_mvpMatrix, 1, GL_FALSE, mvp);
+        glUniformMatrix4fv(loc_modelMatrix, 1, GL_FALSE, inst->getModelMatrix());
+        
+        const float* color = inst->getColor();
+        glUniform4fv(loc_color, 1, color);
+        
+        const float* emissive = inst->getEmissive();
+        glUniform4fv(loc_emissive, 1, emissive);
+        
+        inst->mesh->draw();
+    }
+    
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void Core::Renderer::renderPPGI() {
     glBindFramebuffer(GL_FRAMEBUFFER, postprocessingFBO_GI);
     glViewport(0, 0, 800, 600);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glUseProgram(ppgiShaderProgram);
+
+#ifdef USE_GLES2
+    bindQuadVertexAttributes();
+#else
+    glBindVertexArray(quadVAO);
+#endif
+
+    // 绑定场景纹理
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, sceneColorTex); // 主渲染颜色
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, blurTex[0]); // 自发光贴图
+    glBindTexture(GL_TEXTURE_2D, sceneColorTex);
     glUniform1i(glGetUniformLocation(ppgiShaderProgram, "u_scene"), 0);
+
+    // 绑定radiance纹理
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, blurTex[0]);
     glUniform1i(glGetUniformLocation(ppgiShaderProgram, "u_radiance"), 1);
 
-    float intensity = 1.0f;
-    glUniform1f(glGetUniformLocation(ppgiShaderProgram, "u_intensity"), intensity);
+    // 设置强度
+    glUniform1f(glGetUniformLocation(ppgiShaderProgram, "u_intensity"), 1.0f);
 
-    // 渲染全屏 Quad（已绑定 VAO）
-    glBindVertexArray(quadVAO);
     glDrawArrays(GL_TRIANGLES, 0, 6);
-
-    // 恢复默认帧缓冲
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-}
-void Renderer::shutdown() {
-    glDeleteProgram(shaderProgram); // Delete shader program
-}
-void Renderer::renderStaticInstances(const float vp[16], const std::vector<Instance*>& instances) {
-
-    std::cout << "Rendering static instances..." << std::endl;
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, blurTex[0]); // 扩散后的radiance贴图
-    glUniform1i(glGetUniformLocation(shaderProgram, "radianceTex"), 1);
-
-
-    glBindFramebuffer(GL_FRAMEBUFFER, sceneFBO);
-    glViewport(0, 0, 800, 600); // FBO尺寸
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glUseProgram(shaderProgram);
-
-    for (const auto& inst : instances) {
-        float mvp[16];
-        multiplyMatrices(vp, inst->modelMatrix, mvp);
-
-        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "u_mvpMatrix"), 1, GL_FALSE, mvp);
-        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "u_modelMatrix"), 1, GL_FALSE, inst->modelMatrix);
-        glUniform4fv(glGetUniformLocation(shaderProgram, "u_color"), 1, inst->color);
-        // 如有自发光
-        glUniform4fv(glGetUniformLocation(shaderProgram, "u_emissive"), 1, inst->emissive);
-        glUniform3f(glGetUniformLocation(shaderProgram, "u_lightDir"), 1.0f, 1.0f, 1.0f); // 你想要的光方向
-
-
-        inst->mesh->draw();
-    }
 }
 
-void Core::Renderer::renderDynamicInstances(const float vp[16], const std::vector<Core::Instance *> &instances)
-{
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, blurTex[0]); // 扩散后的radiance贴图
-    glUniform1i(glGetUniformLocation(shaderProgram, "radianceTex"), 1);
-
-
-    glUseProgram(shaderProgram);
-    for (const auto& inst : instances) {
-        float mvp[16];
-        multiplyMatrices(vp, inst->modelMatrix, mvp);
-
-        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "u_mvpMatrix"), 1, GL_FALSE, mvp);
-        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "u_modelMatrix"), 1, GL_FALSE, inst->modelMatrix);
-        glUniform4fv(glGetUniformLocation(shaderProgram, "u_color"), 1, inst->color);
-        // 如有自发光
-        glUniform4fv(glGetUniformLocation(shaderProgram, "u_emissive"), 1, inst->emissive);
-        glUniform3f(glGetUniformLocation(shaderProgram, "u_lightDir"), 1.0f, 1.0f, 1.0f); // 你想要的光方向
-        
-        inst->mesh->draw();
-    }
-}
-
-void Core::Renderer::OneFrameRenderFinish()
-{
-        // 1. 解绑FBO，回到屏幕
+void Core::Renderer::OneFrameRenderFinish(bool usePostProcessing) {
+    // 将最终结果渲染到屏幕
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glViewport(0, 0, 800, 600);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    // 2. 使用全屏Quad着色器
+    
     glUseProgram(quadShaderProgram);
+    
+#ifdef USE_GLES2
+    bindQuadVertexAttributes();
+#else
     glBindVertexArray(quadVAO);
+#endif
+
     glActiveTexture(GL_TEXTURE0);
-    // glBindTexture(GL_TEXTURE_2D, blurTex[0]);
-    glBindTexture(GL_TEXTURE_2D, sceneColorTex);
-    //glBindTexture(GL_TEXTURE_2D, radianceTex);
-    glBindTexture(GL_TEXTURE_2D, postprocessingTex_GI);
-    //glBindTexture(GL_TEXTURE_2D, blockMapTex); // 如果需要显示radiance贴图
-
-
+    // 根据是否使用后处理选择纹理
+    if (usePostProcessing) {
+        glBindTexture(GL_TEXTURE_2D, postprocessingTex_GI);
+    } else {
+        glBindTexture(GL_TEXTURE_2D, sceneColorTex);
+    }
     glUniform1i(glGetUniformLocation(quadShaderProgram, "screenTex"), 0);
-
-    // 3. 绘制全屏Quad
+    
     glDrawArrays(GL_TRIANGLES, 0, 6);
+}
+
+void Core::Renderer::shutdown() {
+    // 清理资源
+    if (shaderProgram) glDeleteProgram(shaderProgram);
+    if (quadShaderProgram) glDeleteProgram(quadShaderProgram);
+    if (radianceShaderProgram) glDeleteProgram(radianceShaderProgram);
+    if (radianceDiffuseShaderProgram) glDeleteProgram(radianceDiffuseShaderProgram);
+    if (blockMapShaderProgram) glDeleteProgram(blockMapShaderProgram);
+    if (ppgiShaderProgram) glDeleteProgram(ppgiShaderProgram);
+    
+    if (sceneFBO) glDeleteFramebuffers(1, &sceneFBO);
+    if (sceneColorTex) glDeleteTextures(1, &sceneColorTex);
+    if (sceneDepthRBO) glDeleteRenderbuffers(1, &sceneDepthRBO);
+    
+    if (radianceFBO) glDeleteFramebuffers(1, &radianceFBO);
+    if (radianceTex) glDeleteTextures(1, &radianceTex);
+    
+    if (blockMapFBO) glDeleteFramebuffers(1, &blockMapFBO);
+    if (blockMapTex) glDeleteTextures(1, &blockMapTex);
+    
+    if (postprocessingFBO_GI) glDeleteFramebuffers(1, &postprocessingFBO_GI);
+    if (postprocessingTex_GI) glDeleteTextures(1, &postprocessingTex_GI);
+    
+    glDeleteFramebuffers(2, blurFBO);
+    glDeleteTextures(2, blurTex);
+    
+#ifndef USE_GLES2
+    if (quadVAO) glDeleteVertexArrays(1, &quadVAO);
+#endif
+    if (quadVBO) glDeleteBuffers(1, &quadVBO);
 }

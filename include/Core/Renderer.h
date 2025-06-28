@@ -34,12 +34,16 @@ public:
     void renderEmissiveToRadianceFBO(const float vp[16], const std::vector<Instance*>& instances);
 
     void renderDiffuseFBO(const float vp[16],const std::vector<Instance*>& instances);
+    
+    // 添加支持SDF GI的新渲染函数
+    void renderDiffuseFBO(const float vp[16], const std::vector<Instance*>& instances, 
+                         const float playerWorldPos[3], const float viewProjectionMatrix[16]);
 
     void renderBlockMap(const float vp[16], const std::vector<Instance*>& instances);
 
     void renderPPGI();
 
-    void OneFrameRenderFinish();
+    void OneFrameRenderFinish(bool usePostProcessing = true);
 
     void shutdown();
 private:
@@ -86,8 +90,25 @@ private:
     
 
 
+    // Uniform locations cache for performance
+    GLint loc_mvpMatrix = -1;
+    GLint loc_modelMatrix = -1;
+    GLint loc_color = -1;
+    GLint loc_emissive = -1;
+    GLint loc_lightDir = -1;
+    GLint loc_radianceTex = -1;
+    
+    // SDF GI相关uniform变量
+    GLint loc_playerScreenPos = -1;  // 玩家屏幕坐标
+    GLint loc_texelSize = -1;        // 纹素大小
+    GLint loc_lightRange = -1;       // 光照范围
+
     int indexCount;
     bool compileShaders();
+
+#ifdef USE_GLES2
+    void bindQuadVertexAttributes();
+#endif
 
     CubeMesh Cube; // 使用 CubeMesh 类来处理立方体网格
     PanelMesh Panel; // 使用 PanelMesh 类来处理面板网格

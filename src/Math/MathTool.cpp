@@ -184,3 +184,82 @@ void createModelMatrix1(float matrix[16], float offset[3],float rotate_deg[3], f
 
 
 }
+
+// 4x4矩阵求逆函数（使用Gauss-Jordan消元法）
+bool invertMatrix(const float m[16], float inv[16]) {
+    // 创建增广矩阵 [M | I]
+    float mat[4][8];
+    
+    // 初始化增广矩阵
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
+            mat[i][j] = m[i * 4 + j];           // 原矩阵
+            mat[i][j + 4] = (i == j) ? 1.0f : 0.0f; // 单位矩阵
+        }
+    }
+    
+    // Gauss-Jordan消元
+    for (int i = 0; i < 4; i++) {
+        // 寻找主元
+        int maxRow = i;
+        for (int k = i + 1; k < 4; k++) {
+            if (fabs(mat[k][i]) > fabs(mat[maxRow][i])) {
+                maxRow = k;
+            }
+        }
+        
+        // 交换行
+        if (maxRow != i) {
+            for (int k = 0; k < 8; k++) {
+                float temp = mat[i][k];
+                mat[i][k] = mat[maxRow][k];
+                mat[maxRow][k] = temp;
+            }
+        }
+        
+        // 检查是否可逆
+        if (fabs(mat[i][i]) < 1e-6f) {
+            return false; // 矩阵不可逆
+        }
+        
+        // 归一化主元行
+        float pivot = mat[i][i];
+        for (int k = 0; k < 8; k++) {
+            mat[i][k] /= pivot;
+        }
+        
+        // 消元
+        for (int k = 0; k < 4; k++) {
+            if (k != i) {
+                float factor = mat[k][i];
+                for (int j = 0; j < 8; j++) {
+                    mat[k][j] -= factor * mat[i][j];
+                }
+            }
+        }
+    }
+    
+    // 提取逆矩阵
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
+            inv[i * 4 + j] = mat[i][j + 4];
+        }
+    }
+    
+    return true;
+}
+void createOrthographicMatrix(float left, float right, float bottom, float top, float nearZ, float farZ, float matrix[16]) {
+    // 初始化为0
+    for (int i = 0; i < 16; i++) {
+        matrix[i] = 0.0f;
+    }
+    
+    // 正交投影矩阵
+    matrix[0] = 2.0f / (right - left);
+    matrix[5] = 2.0f / (top - bottom);
+    matrix[10] = -2.0f / (farZ - nearZ);
+    matrix[12] = -(right + left) / (right - left);
+    matrix[13] = -(top + bottom) / (top - bottom);
+    matrix[14] = -(farZ + nearZ) / (farZ - nearZ);
+    matrix[15] = 1.0f;
+}
